@@ -71,12 +71,6 @@ jobs:
           pacman-key --populate archlinuxarm
           EOF
 
-      - name: Configure pacman mirrorlist
-        run: |
-          sudo arch-chroot ./mountpoint bash - <<'EOF'
-          echo 'Server = http://mirror.archlinuxarm.org/$arch/$repo' > /etc/pacman.d/mirrorlist
-          EOF
-
       - name: Set locale
         run: |
           sudo arch-chroot ./mountpoint bash - <<'EOF'
@@ -213,6 +207,32 @@ jobs:
         run: |
           sudo arch-chroot ./mountpoint bash - <<'EOF'
           tar cvzf "/opt/nabu/efi.tgz" -C "/boot/efi/" .
+          EOF
+
+      # TODO: inject a wifi auto connect here
+
+      - name: Localize keyboard
+        run: |
+          sudo arch-chroot ./mountpoint bash - <<'EOF'
+          echo 'KEYMAP=colemak' >>/etc/vconsole.conf
+          EOF
+
+      - name: Localize timezone
+        run: |
+          sudo arch-chroot ./mountpoint bash - <<'EOF'
+          ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+          EOF
+
+      - name: Localize mirrorlist
+        run: |
+          sudo arch-chroot ./mountpoint bash - <<'EOF'
+          echo 'Server = http://mirrors.ustc.edu.cn/archlinuxarm/$arch/$repo' > /etc/pacman.d/mirrorlist
+          EOF
+
+      - name: Update pacman cache
+        run: |
+          sudo arch-chroot ./mountpoint bash - <<'EOF'
+          pacman -Syu --noconfirm
           EOF
 
       - name: Clear pacman cache
