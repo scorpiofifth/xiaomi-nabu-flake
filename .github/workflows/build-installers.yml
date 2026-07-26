@@ -183,18 +183,6 @@ jobs:
           sed -i "s|HOOKS=(base udev autodetect microcode modconf kms keyboard keymap consolefont block filesystems fsck)|HOOKS=(base udev autodetect modconf kms keyboard keymap consolefont block filesystems fsck)|g" /etc/mkinitcpio.conf
           EOF
 
-      - name: Generate UKI
-        run: |
-          sudo arch-chroot ./mountpoint bash - <<'EOF'
-          mkinitcpio -P
-          EOF
-
-      - name: Pack efi
-        run: |
-          sudo arch-chroot ./mountpoint bash - <<'EOF'
-          tar cvzf "/opt/nabu/efi.tgz" -C "/boot/efi/" .
-          EOF
-
       - name: Install base packages
         run: |
           sudo arch-chroot ./mountpoint bash - <<'EOF'
@@ -206,16 +194,16 @@ jobs:
           sudo arch-chroot ./mountpoint bash - <<'EOF'
           systemctl enable bluetooth NetworkManager
           EOF
-      - name: Unpack efi
+
+      - name: Generate UKI
         run: |
           sudo arch-chroot ./mountpoint bash - <<'EOF'
-          /opt/nabu/postinstall extract-efi
+          mkinitcpio -P
           EOF
 
       - name: Pack efi
         run: |
           sudo arch-chroot ./mountpoint bash - <<'EOF'
-          rm -f /opt/nabu/efi.tgz
           tar cvzf "/opt/nabu/efi.tgz" -C "/boot/efi/" .
           EOF
 
