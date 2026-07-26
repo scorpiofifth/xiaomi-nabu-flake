@@ -69,12 +69,6 @@ jobs:
           echo 'Server = http://mirror.archlinuxarm.org/$arch/$repo' > /etc/pacman.d/mirrorlist
           EOF
 
-      - name: Delete default user
-        run: |
-          sudo arch-chroot ./mountpoint bash - <<'EOF'
-          userdel alarm
-          EOF
-
       - name: Set locale
         run: |
           sudo arch-chroot ./mountpoint bash - <<'EOF'
@@ -212,14 +206,6 @@ jobs:
           sudo arch-chroot ./mountpoint bash - <<'EOF'
           systemctl enable bluetooth NetworkManager
           EOF
-      # TODO: use the default user and password
-      - name: Create user with password
-        run: |
-          sudo arch-chroot ./mountpoint bash - <<'EOF'
-          useradd -m -G wheel,audio,video,storage,optical -s /bin/bash user
-          echo "user:123456" | chpasswd
-          EOF
-
       - name: Unpack efi
         run: |
           sudo arch-chroot ./mountpoint bash - <<'EOF'
