@@ -1,4 +1,23 @@
 #!/usr/bin/env bash
+# nabu-pmac-set
+#
+# Derives a persistent WLAN MAC address from the device's board serial number.
+#
+# Why this is needed:
+#   The ath10k WiFi firmware on Xiaomi Mi Pad 5 (nabu) does not provide a
+#   fixed MAC address across reboots. Without this, the interface can get a
+#   random or empty MAC each boot, breaking:
+#     - Automatic reconnection to known WiFi networks
+#     - Static IP assignments from the router / DHCP server
+#     - The hardcoded NetworkManager connection in this installer
+#
+# Mechanism:
+#   1. Read board serial from DMI (/sys/class/dmi/id/board_serial)
+#   2. SHA-256 hash the serial, take first 6 bytes as MAC
+#   3. Set bit 1 of byte 0 (locally-administered, unicast) per IEEE 802
+#   4. Apply the MAC and bring wlan0 up
+#
+# Called by: nabu-pmac.service (Before=network-pre.target)
 set -e
 
 if [[ $EUID -ne 0 ]]; then
@@ -17,6 +36,7 @@ mac_raw=${hash:0:12}
 mac_bytes=($(echo $mac_raw | sed 's/\(..\)/\1 /g'))
 first_byte=${mac_bytes[0]}
 first_byte_dec=$((16#$first_byte))
+# Set locally-administered + unicast bits: clear bit 1, set bit 1
 first_byte_dec=$(( (first_byte_dec & 0xFC) | 0x02 ))
 first_byte_hex=$(printf '%02x' $first_byte_dec)
 mac="${first_byte_hex}:${mac_bytes[1]}:${mac_bytes[2]}:${mac_bytes[3]}:${mac_bytes[4]}:${mac_bytes[5]}"

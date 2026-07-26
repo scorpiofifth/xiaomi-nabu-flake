@@ -173,13 +173,6 @@ jobs:
           systemctl enable nabu-pmac
           EOF
 
-      # - name: Enable zram-generator
-      #   run: |
-      #     sudo arch-chroot ./mountpoint bash - <<'EOF'
-      #     pacman -S --noconfirm zram-generator
-      #     systemctl enable systemd-zram-setup@zram0.service
-      #     EOF
-
       - name: Create efi
         run: |
           sudo arch-chroot ./mountpoint bash - <<'EOF'
@@ -218,31 +211,33 @@ jobs:
           tar cvzf "/opt/nabu/efi.tgz" -C "/boot/efi/" .
           EOF
 
-      - name: Localize wifi connection
-        run: |
-          sudo arch-chroot ./mountpoint bash - <<'EOF'
-          cat <<EOFF >/etc/NetworkManager/system-connections/CMCC-H6Rf.nmconnection
-          [connection]
-          id=CMCC-H6Rf
-          uuid=$(uuidgen)
-          type=wifi
-          interface-name=wld0
-
-          [wifi]
-          mode=infrastructure
-          ssid=CMCC-H6Rf
-
-          [wifi-security]
-          auth-alg=open
-          key-mgmt=wpa-psk
-          psk=XUAan4Um
-
-          [ipv4]
-          address1=192.168.100.166/24
-          gateway=192.168.100.1
-          method=manual
-          EOFF
-          EOF
+      # FIXME: the config doesn't work
+      #
+      # - name: Localize wifi connection
+      #   run: |
+      #     sudo arch-chroot ./mountpoint bash - <<'EOF'
+      #     cat <<EOFF >/etc/NetworkManager/system-connections/CMCC-H6Rf.nmconnection
+      #     [connection]
+      #     id=CMCC-H6Rf
+      #     uuid=$(uuidgen)
+      #     type=wifi
+      #     interface-name=wld0
+      #
+      #     [wifi]
+      #     mode=infrastructure
+      #     ssid=CMCC-H6Rf
+      #
+      #     [wifi-security]
+      #     auth-alg=open
+      #     key-mgmt=wpa-psk
+      #     psk=XUAan4Um
+      #
+      #     [ipv4]
+      #     address1=192.168.100.166/24
+      #     gateway=192.168.100.1
+      #     method=manual
+      #     EOFF
+      #     EOF
 
       - name: Localize keyboard
         run: |
