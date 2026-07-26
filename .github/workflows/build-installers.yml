@@ -34,7 +34,15 @@ jobs:
           sudo mount -o size=512M,mode=0755 -t tmpfs none ./mountpoint/boot/efi/
           echo "::endgroup::"
 
+      - name: Cache rootfs tarball
+        id: cache-rootfs
+        uses: actions/cache@v6
+        with:
+          path: ArchLinuxARM-aarch64-latest.tar.gz
+          key: arch-rootfs
+
       - name: Download generic rootfs tarball
+        if: steps.cache-rootfs.outputs.cache-hit != 'true'
         run: |
           wget "http://os.archlinuxarm.org/os/ArchLinuxARM-aarch64-latest.tar.gz" -qO ArchLinuxARM-aarch64-latest.tar.gz
 
