@@ -252,6 +252,7 @@ jobs:
     needs: build-base-image
     permissions:
       actions: read
+      contents: read
     steps:
       - name: Update apt cache
         run: sudo apt-get update
