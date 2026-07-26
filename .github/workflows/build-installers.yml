@@ -1,9 +1,12 @@
 name: Build installers
 on: workflow_dispatch
 jobs:
-  build-base-image:
-    name: Build base image
+  build-installer:
+    name: Build installer
     runs-on: ubuntu-24.04-arm
+    permissions:
+      actions: read
+      contents: read
     steps:
       - name: Update apt cache
         run: sudo apt-get update
@@ -11,7 +14,7 @@ jobs:
       - name: Install tools
         run: |
           sudo apt-get install -y \
-            git arch-install-scripts wget libarchive-tools e2fsprogs pigz
+            git arch-install-scripts wget libarchive-tools e2fsprogs pigz dosfstools
 
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -209,7 +212,6 @@ jobs:
           sudo arch-chroot ./mountpoint bash - <<'EOF'
           systemctl enable bluetooth NetworkManager
           EOF
-
       # TODO: use the default user and password
       - name: Create user with password
         run: |
@@ -217,71 +219,6 @@ jobs:
           useradd -m -G wheel,audio,video,storage,optical -s /bin/bash user
           echo "user:123456" | chpasswd
           EOF
-
-      - name: Clear pacman cache
-        run: |
-          sudo arch-chroot ./mountpoint bash - <<'EOF'
-          yes | pacman -Scc
-          EOF
-
-      - name: Unmount rootfs image
-        run: |
-          sudo umount -R ./mountpoint
-          rmdir ./mountpoint
-
-      - name: Compress rootfs image
-        run: |
-          e2fsck -f rootfs.img -y
-          resize2fs rootfs.img -M
-          pigz -9 rootfs.img
-
-      - name: Upload rootfs artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: arch-nabu-rootfs-base
-          path: ./rootfs.img.gz
-          retention-days: 90
-          compression-level: 0
-
-  build-full-image:
-    name: Build Full image
-    runs-on: ubuntu-24.04-arm
-    needs: build-base-image
-    permissions:
-      actions: read
-      contents: read
-    steps:
-      - name: Update apt cache
-        run: sudo apt-get update
-
-      - name: Install tools
-        run: sudo apt-get install -y git arch-install-scripts wget libarchive-tools e2fsprogs pigz dosfstools
-
-      - name: Checkout repository
-        uses: actions/checkout@v7
-        with:
-          path: repo
-
-      - name: Download base image
-        uses: actions/download-artifact@v8
-        with:
-          name: arch-nabu-rootfs-base
-
-      - name: Unpack and mount base image
-        run: |
-          echo "::group::Unpack image"
-          pigz -d rootfs.img.gz
-          echo "::endgroup::"
-          echo "::group::Expand image"
-          e2fsck -f rootfs.img -y
-          resize2fs rootfs.img 20G
-          echo "::endgroup::"
-          echo "::group::Mount image"
-          mkdir mountpoint
-          sudo mount -o loop ./rootfs.img ./mountpoint/
-          sudo mkdir ./mountpoint/boot/efi/ -p
-          sudo mount -o size=512M,mode=0755 -t tmpfs none ./mountpoint/boot/efi/
-          echo "::endgroup::"
 
       - name: Unpack efi
         run: |
@@ -345,7 +282,7 @@ jobs:
           cp ./repo/base/overlay/opt/nabu/fastboot-script/flash-linux.sh .
           chmod +x flash-linux.sh
 
-      - name: Upload installer artiftact
+      - name: Upload installer artifact
         uses: actions/upload-artifact@v7
         with:
           name: arch-nabu-installer
