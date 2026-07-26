@@ -260,7 +260,7 @@ jobs:
         run: sudo apt-get install -y git arch-install-scripts wget libarchive-tools e2fsprogs pigz dosfstools
 
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           path: repo
 
@@ -373,7 +373,7 @@ jobs:
           cp ./repo/base/overlay/opt/nabu/fastboot-script/flash-linux.sh .
           chmod +x flash-linux.sh
 
-      - name: Upload installer artifact
+      - name: Upload installer artiftact
         uses: actions/upload-artifact@v7
         with:
           name: arch-nabu-installer-plasma
