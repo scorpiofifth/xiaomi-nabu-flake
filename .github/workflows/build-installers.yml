@@ -34,6 +34,7 @@ jobs:
           sudo mount -o size=512M,mode=0755 -t tmpfs none ./mountpoint/boot/efi/
           echo "::endgroup::"
 
+      # NOTE: remove the cache by using `gh cache delete` command
       - name: Cache rootfs tarball
         id: cache-rootfs
         uses: actions/cache@v6
@@ -44,7 +45,8 @@ jobs:
       - name: Download generic rootfs tarball
         if: steps.cache-rootfs.outputs.cache-hit != 'true'
         run: |
-          wget "http://os.archlinuxarm.org/os/ArchLinuxARM-aarch64-latest.tar.gz" -qO ArchLinuxARM-aarch64-latest.tar.gz
+          wget -qO "ArchLinuxARM-aarch64-latest.tar.gz" \
+            "http://os.archlinuxarm.org/os/ArchLinuxARM-aarch64-latest.tar.gz"
 
       - name: Build rootfs-extractor image
         run: |
@@ -150,6 +152,13 @@ jobs:
           pacman -S --noconfirm terminus-font
           EOF
 
+      - name: Localize shell
+        run: |
+          sudo arch-chroot ./mountpoint bash - <<'EOF'
+          pacman -S --noconfirm fish
+          chsh -s /usr/bin/fish alarm
+          EOF
+
       - name: Apply base overlay
         run: |
           sudo cp ./repo/base/overlay/* -r ./mountpoint/
@@ -164,12 +173,12 @@ jobs:
           systemctl enable nabu-pmac
           EOF
 
-      - name: Enable zram-generator
-        run: |
-          sudo arch-chroot ./mountpoint bash - <<'EOF'
-          pacman -S --noconfirm zram-generator
-          systemctl enable systemd-zram-setup@zram0.service
-          EOF
+      # - name: Enable zram-generator
+      #   run: |
+      #     sudo arch-chroot ./mountpoint bash - <<'EOF'
+      #     pacman -S --noconfirm zram-generator
+      #     systemctl enable systemd-zram-setup@zram0.service
+      #     EOF
 
       - name: Create efi
         run: |
@@ -209,7 +218,31 @@ jobs:
           tar cvzf "/opt/nabu/efi.tgz" -C "/boot/efi/" .
           EOF
 
-      # TODO: inject a wifi auto connect here
+      - name: Localize wifi connection
+        run: |
+          sudo arch-chroot ./mountpoint bash - <<'EOF'
+          cat <<EOFF >/etc/NetworkManager/system-connections/CMCC-H6Rf.nmconnection
+          [connection]
+          id=CMCC-H6Rf
+          uuid=$(uuidgen)
+          type=wifi
+          interface-name=wld0
+
+          [wifi]
+          mode=infrastructure
+          ssid=CMCC-H6Rf
+
+          [wifi-security]
+          auth-alg=open
+          key-mgmt=wpa-psk
+          psk=XUAan4Um
+
+          [ipv4]
+          address1=192.168.100.166/24
+          gateway=192.168.100.1
+          method=manual
+          EOFF
+          EOF
 
       - name: Localize keyboard
         run: |
