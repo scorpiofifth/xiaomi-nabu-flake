@@ -215,6 +215,8 @@ buildLinux {
     }
   ];
 
+  makeFlags = [ "-s" ];
+
   configfile = ./kernel/config;
 
   extraLocalVersion = "-3-nabu";
