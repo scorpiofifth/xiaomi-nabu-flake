@@ -15,9 +15,14 @@ jobs:
 
       - name: Install tools
         run: |
+          echo "::group::Update APT cache"
           sudo apt-get update
+          echo "::endgroup::"
+
+          echo "::group::Install tools"
           sudo apt-get install -y \
             git arch-install-scripts wget libarchive-tools e2fsprogs pigz dosfstools
+          echo "::endgroup::"
 
       - name: Create and mount image
         run: |
@@ -25,6 +30,7 @@ jobs:
           truncate -s 20G ./rootfs.img
           mkfs.ext4 ./rootfs.img
           echo "::endgroup::"
+
           echo "::group::Mount image"
           mkdir mountpoint
           sudo mount -o loop ./rootfs.img ./mountpoint/
@@ -56,6 +62,7 @@ jobs:
           ' > Dockerfile
           docker build -t rootfs-extractor .
           echo "::endgroup::"
+
           echo "::group::Extract"
           docker run --rm \
             -v ${{ github.workspace }}/ArchLinuxARM-aarch64-latest.tar.gz:/rootfs.tar \
