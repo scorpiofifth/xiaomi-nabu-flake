@@ -116,16 +116,16 @@ jobs:
           EOF
           echo "::endgroup::"
 
-          echo "::group::Enable services"
-          sudo arch-chroot ./mountpoint bash - <<'EOF'
-          systemctl enable tqftpserv rmtfs nabu-pmac bluetooth NetworkManager
-          EOF
-          echo "::endgroup::"
-
           echo "::group::Apply base overlay"
           sudo cp ./repo/base/overlay/* -r ./mountpoint/
           /overlay-post-apply
           rm /overlay-post-apply
+          EOF
+          echo "::endgroup::"
+
+          echo "::group::Enable services"
+          sudo arch-chroot ./mountpoint bash - <<'EOF'
+          systemctl enable tqftpserv rmtfs nabu-pmac bluetooth NetworkManager
           EOF
           echo "::endgroup::"
 
