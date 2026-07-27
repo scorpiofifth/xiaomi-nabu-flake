@@ -211,34 +211,6 @@ jobs:
           tar cvzf "/opt/nabu/efi.tgz" -C "/boot/efi/" .
           EOF
 
-      # FIXME: the config doesn't work
-      #
-      # - name: Localize wifi connection
-      #   run: |
-      #     sudo arch-chroot ./mountpoint bash - <<'EOF'
-      #     cat <<EOFF >/etc/NetworkManager/system-connections/CMCC-H6Rf.nmconnection
-      #     [connection]
-      #     id=CMCC-H6Rf
-      #     uuid=$(uuidgen)
-      #     type=wifi
-      #     interface-name=wld0
-      #
-      #     [wifi]
-      #     mode=infrastructure
-      #     ssid=CMCC-H6Rf
-      #
-      #     [wifi-security]
-      #     auth-alg=open
-      #     key-mgmt=wpa-psk
-      #     psk=XUAan4Um
-      #
-      #     [ipv4]
-      #     address1=192.168.100.166/24
-      #     gateway=192.168.100.1
-      #     method=manual
-      #     EOFF
-      #     EOF
-
       - name: Localize keyboard
         run: |
           sudo arch-chroot ./mountpoint bash - <<'EOF'
@@ -289,11 +261,6 @@ jobs:
           mv ./repo/bin ./bin
           mv ./repo/DBKP ./DBKP
           mv ./repo/META-INF ./META-INF
-          mv ./repo/installer ./installer
-
-      - name: Download WinPE image
-        run: |
-          wget "https://github.com/WOAFlasher/WinInstaller/releases/download/WinPE/WinPE23H2.img" -qO ./installer/pe.img
 
       - name: Create ESP image
         run: |
@@ -315,7 +282,6 @@ jobs:
             DBKP
             efi
             images
-            installer
             META-INF
           retention-days: 90
           compression-level: 5
