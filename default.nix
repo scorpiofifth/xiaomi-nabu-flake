@@ -1,14 +1,17 @@
-{ pkgs, lib, ... }:
-
+{
+  lib,
+  fetchurl,
+  buildLinux,
+}:
 let
   kernelVersion = "6.16";
   kernelRelease = "6.16.0";
 in
-pkgs.buildLinux {
+buildLinux {
   version = kernelRelease;
   modDirVersion = kernelRelease;
 
-  src = pkgs.fetchurl {
+  src = fetchurl {
     url = "https://www.kernel.org/pub/linux/kernel/v6.x/linux-${kernelVersion}.tar.xz";
     sha256 = "1a4be2fe6b5246aa4ac8987a8a4af34c42a8dd7d08b46ab48516bcc1befbcd83";
   };
