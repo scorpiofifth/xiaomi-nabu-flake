@@ -4,7 +4,7 @@ GitHub Actions 自动构建的 Arch Linux 安装包，适用于 Xiaomi Mi Pad 5 
 
 ## 文件结构
 
-```
+```text
 arch-nabu-installer.zip
 │
 ├── images/
@@ -26,19 +26,9 @@ arch-nabu-installer.zip
 │   └── arch/
 │       └── arch-linux-nabu.efi   # Unified Kernel Image
 │
-├── installer/
-│   ├── install.bat               # Windows PE 安装脚本
-│   └── pe.img                    # WinPE 映像
-│
-├── flash-linux.bat               # fastboot 刷写脚本 (Windows)
-├── flash-linux.sh                # fastboot 刷写脚本 (Linux)
-│
 ├── bin/                          # 跨平台预编译工具
 │   ├── 7zzs                      # 7-Zip
-│   ├── bcdctl                    # Windows BCD 编辑器
-│   ├── btrfs                     # Btrfs 工具
-│   ├── mke2fs                    # ext2/3/4 格式化
-│   └── mkfs.fat                  # FAT32 格式化
+│   └── mke2fs                    # ext2/3/4 格式化
 │
 ├── DBKP/                         # DualBootKernelPatcher 双启动工具
 │   ├── DualBootKernelPatcher     # ARM64 内核修补器
