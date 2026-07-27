@@ -41,10 +41,11 @@ ui_print "Verifying present bootloader configration"
 umount -lf /dev/block/by-name/esp 2>/dev/null || true
 mkdir -p "$TMPDIR/esp"
 mount /dev/block/by-name/esp "$TMPDIR/esp"
-rm -rf "$TMPDIR"/esp/*
-mkdir -p "$TMPDIR/esp/EFI"
+rm -rf "$TMPDIR/esp/EFI"
+# mkdir -p "$TMPDIR/esp/EFI"
+# NOTE: it also create a folder `$TMPDIR/esp/efi`
 unzip -o "$ZIPFILE" "efi/*" -d "$TMPDIR/esp"
-umount -lf /dev/block/by-name/esp
+umount -lf /dev/block/by-name/esp 2>/dev/null || true
 ui_print "Boot configuration setup completed!"
 
 ui_print "Unpacking the DBKP installer..."
