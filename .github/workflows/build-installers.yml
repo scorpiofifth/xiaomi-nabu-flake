@@ -36,6 +36,7 @@ jobs:
           sudo mount -o loop ./rootfs.img ./mountpoint/
           sudo mkdir ./mountpoint/boot/efi/ -p
           sudo mount -o size=512M,mode=0755 -t tmpfs none ./mountpoint/boot/efi/
+          echo OK
           echo "::endgroup::"
 
       # NOTE: remove the cache by using `gh cache delete` command
@@ -169,7 +170,6 @@ jobs:
         run: |
           sudo cp ./repo/base/overlay/* -r ./mountpoint/
 
-      # TODO: remove the checker
       - name: Configure kernel preset and pacman
         run: |
           sudo arch-chroot ./mountpoint bash - <<'EOF'
@@ -191,10 +191,6 @@ jobs:
           else
               sed -i '/^\[options\]/a\IgnorePkg = linux-nabu linux-nabu-headers' /etc/pacman.conf
           fi
-
-          echo "---------------------------------"
-          echo $kernver
-          cat /etc/mkinitcpio.d/linux-nabu.preset
           EOF
 
       - name: Enable nabu wlan service
