@@ -9,4 +9,4 @@ jobs:
         with:
           nix_path: nixpkgs=channel:nixos-unstable
       - name: Compile
-        run: nix-build -Q -E '(import <nixpkgs> { system = "aarch64-linux"; }).callPackage ./default.nix { }'
+        run: nix-build -E '(import <nixpkgs> { system = "aarch64-linux"; }).callPackage ./default.nix { }'
