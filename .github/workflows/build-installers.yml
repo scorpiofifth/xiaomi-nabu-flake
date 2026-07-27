@@ -306,12 +306,6 @@ jobs:
           sudo umount ./esp-mount
           rmdir ./esp-mount
 
-      - name: Copy flash scripts
-        run: |
-          cp ./repo/base/overlay/opt/nabu/fastboot-script/flash-linux.bat .
-          cp ./repo/base/overlay/opt/nabu/fastboot-script/flash-linux.sh .
-          chmod +x flash-linux.sh
-
       - name: Upload installer artifact
         uses: actions/upload-artifact@v7
         with:
@@ -320,8 +314,6 @@ jobs:
             bin
             DBKP
             efi
-            flash-linux.bat
-            flash-linux.sh
             images
             installer
             META-INF
