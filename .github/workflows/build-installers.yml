@@ -65,100 +65,180 @@ jobs:
             "
           echo "::endgroup::"
 
-      - name: Configure system via arch-chroot
+      - name: Init pacman key store
         run: |
-          echo "::group::Initialize pacman"
           sudo arch-chroot ./mountpoint bash - <<'EOF'
           pacman-key --init
           pacman-key --populate archlinuxarm
           EOF
-          echo "::endgroup::"
 
-          echo "::group::Configure locale and pacman"
+      - name: Set locale
+        run: |
           sudo arch-chroot ./mountpoint bash - <<'EOF'
           sed -i "s|#en_US.UTF-8 UTF-8|en_US.UTF-8 UTF-8|g" "/etc/locale.gen"
           locale-gen
           echo "LANG=en_US.UTF-8" > "/etc/locale.conf"
+          EOF
+
+      - name: Configure pacman options
+        run: |
+          sudo arch-chroot ./mountpoint bash - <<'EOF'
           sed -i "s/#ParallelDownloads/ParallelDownloads/g" /etc/pacman.conf
           sed -i "s/#DisableSandboxFilesystem/DisableSandboxFilesystem/g" /etc/pacman.conf
           sed -i "s/#DisableSandboxSyscalls/DisableSandboxSyscalls/g" /etc/pacman.conf
           EOF
-          echo "::endgroup::"
 
-          echo "::group::Add pacman repo"
+      - name: Add nabu repo
+        run: |
           sudo arch-chroot ./mountpoint bash - <<'EOF'
           printf '\n[nabu]\nSigLevel = Never\nServer = https://github.com/Kumar-Jy/Nabu-arch-images/releases/download/repo\n' >> /etc/pacman.conf
           pacman -Sy --noconfirm
           EOF
-          echo "::endgroup::"
 
-          echo "::group::Update and install packages"
+      - name: Remove generic kernel
+        run: |
           sudo arch-chroot ./mountpoint bash - <<'EOF'
           pacman -R --noconfirm linux-aarch64
-          pacman -Syu --noconfirm
-          pacman -S --noconfirm \
-            linux-firmware-xiaomi-nabu \
-            ukify \
-            linux-nabu linux-nabu-headers \
-            alsa-ucm-conf-xiaomi-nabu \
-            tqftpserv rmtfs \
-            sudo \
-            terminus-font \
-            fish \
-            networkmanager bluez bluez-utils vulkan-freedreno
           EOF
-          echo "::endgroup::"
 
-          echo "::group::Configure installed packages"
+      - name: Update system
+        run: |
           sudo arch-chroot ./mountpoint bash - <<'EOF'
+          pacman -Syu --noconfirm
+          EOF
+
+      - name: Install firmwares
+        run: |
+          sudo arch-chroot ./mountpoint bash - <<'EOF'
+          pacman -S --noconfirm linux-firmware-xiaomi-nabu
+          EOF
+
+      - name: Install ukify
+        run: |
+          sudo arch-chroot ./mountpoint bash - <<'EOF'
+          pacman -S --noconfirm ukify
+          EOF
+
+      - name: Install kernel and headers
+        run: |
+          sudo arch-chroot ./mountpoint bash - <<'EOF'
+          pacman -S --noconfirm linux-nabu linux-nabu-headers
+          EOF
+
+      - name: Install alsa ucm config
+        run: |
+          sudo arch-chroot ./mountpoint bash - <<'EOF'
+          pacman -S --noconfirm alsa-ucm-conf-xiaomi-nabu
+          EOF
+
+      - name: Install qualcomm wlan services
+        run: |
+          sudo arch-chroot ./mountpoint bash - <<'EOF'
+          pacman -S --noconfirm tqftpserv rmtfs
+          systemctl enable tqftpserv rmtfs
+          EOF
+
+      - name: Install and configure sudo
+        run: |
+          sudo arch-chroot ./mountpoint bash - <<'EOF'
+          pacman -S --noconfirm sudo
           echo "%wheel ALL=(ALL:ALL) NOPASSWD: ALL" > /etc/sudoers.d/10-nopasswd
+          EOF
+
+      - name: Install console font
+        run: |
+          sudo arch-chroot ./mountpoint bash - <<'EOF'
+          pacman -S --noconfirm terminus-font
+          EOF
+
+      - name: Localize shell
+        run: |
+          sudo arch-chroot ./mountpoint bash - <<'EOF'
+          pacman -S --noconfirm fish
           chsh -s /usr/bin/fish alarm
           EOF
-          echo "::endgroup::"
 
-          echo "::group::Apply base overlay"
+      - name: Apply base overlay
+        run: |
           sudo cp ./repo/base/overlay/* -r ./mountpoint/
+          sudo arch-chroot ./mountpoint bash - <<'EOF'
           /overlay-post-apply
           rm /overlay-post-apply
           EOF
-          echo "::endgroup::"
 
-          echo "::group::Enable services"
+      - name: Enable nabu wlan service
+        run: |
           sudo arch-chroot ./mountpoint bash - <<'EOF'
-          systemctl enable tqftpserv rmtfs nabu-pmac bluetooth NetworkManager
+          systemctl enable nabu-pmac
           EOF
-          echo "::endgroup::"
 
-          echo "::group::Set up EFI"
+      - name: Create efi
+        run: |
           sudo arch-chroot ./mountpoint bash - <<'EOF'
           cp /opt/nabu/efi-template/* -rv /boot/efi/
           mkdir /boot/efi/EFI/arch/
-          rm -rf /opt/nabu/efi-template
+          rm /opt/nabu/efi-template -r
           EOF
-          echo "::endgroup::"
 
-          echo "::group::Generate initramfs and pack UKI"
+      - name: Configure mkinitcpio(remove microcode)
+        run: |
           sudo arch-chroot ./mountpoint bash - <<'EOF'
           sed -i "s|HOOKS=(base udev autodetect microcode modconf kms keyboard keymap consolefont block filesystems fsck)|HOOKS=(base udev autodetect modconf kms keyboard keymap consolefont block filesystems fsck)|g" /etc/mkinitcpio.conf
+          EOF
+
+      - name: Install base packages
+        run: |
+          sudo arch-chroot ./mountpoint bash - <<'EOF'
+          pacman -S --noconfirm networkmanager bluez bluez-utils vulkan-freedreno
+          EOF
+
+      - name: Enable bluetooth and network manager
+        run: |
+          sudo arch-chroot ./mountpoint bash - <<'EOF'
+          systemctl enable bluetooth NetworkManager
+          EOF
+
+      - name: Generate UKI
+        run: |
+          sudo arch-chroot ./mountpoint bash - <<'EOF'
           mkinitcpio -P
+          EOF
+
+      - name: Pack efi
+        run: |
+          sudo arch-chroot ./mountpoint bash - <<'EOF'
           tar cvzf "/opt/nabu/efi.tgz" -C "/boot/efi/" .
           EOF
-          echo "::endgroup::"
 
-          echo "::group::Localization"
+      - name: Localize keyboard
+        run: |
           sudo arch-chroot ./mountpoint bash - <<'EOF'
           echo 'KEYMAP=colemak' >>/etc/vconsole.conf
+          EOF
+
+      - name: Localize timezone
+        run: |
+          sudo arch-chroot ./mountpoint bash - <<'EOF'
           ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+          EOF
+
+      - name: Localize mirrorlist
+        run: |
+          sudo arch-chroot ./mountpoint bash - <<'EOF'
           echo 'Server = http://mirrors.ustc.edu.cn/archlinuxarm/$arch/$repo' > /etc/pacman.d/mirrorlist
           EOF
-          echo "::endgroup::"
 
-          echo "::group::Finalize"
+      - name: Update pacman cache
+        run: |
           sudo arch-chroot ./mountpoint bash - <<'EOF'
           pacman -Syu --noconfirm
+          EOF
+
+      - name: Clear pacman cache
+        run: |
+          sudo arch-chroot ./mountpoint bash - <<'EOF'
           yes | pacman -Scc
           EOF
-          echo "::endgroup::"
 
       - name: Export efi directory for artifact
         run: |
