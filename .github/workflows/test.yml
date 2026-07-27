@@ -12,4 +12,5 @@ jobs:
       - name: Print nixpkgs version
         run: nix-instantiate --eval -E '(import <nixpkgs> {}).lib.version'
       - name: Compile
-        run: nix-build -E '(import <nixpkgs> { system = "aarch64-linux"; }).callPackage ./default.nix { }'
+        run: nix-build default.nix
+        # run: nix-build -E '(import <nixpkgs> { system = "aarch64-linux"; }).callPackage ./default.nix { }'
