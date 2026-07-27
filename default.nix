@@ -3,17 +3,33 @@
   fetchurl,
   buildLinux,
 }:
-let
-  kernelVersion = "6.16";
-  kernelRelease = "6.16.0";
-in
 buildLinux {
-  version = kernelRelease;
-  modDirVersion = kernelRelease;
+  version = "6.16.0";
+  modDirVersion = "6.16.0";
 
   src = fetchurl {
-    url = "https://www.kernel.org/pub/linux/kernel/v6.x/linux-${kernelVersion}.tar.xz";
+    url = "https://www.kernel.org/pub/linux/kernel/v6.x/linux-6.16.tar.xz";
     sha256 = "1a4be2fe6b5246aa4ac8987a8a4af34c42a8dd7d08b46ab48516bcc1befbcd83";
+  };
+
+  configfile = ./kernel/config;
+
+  extraLocalVersion = "-3-nabu";
+
+  makeFlags = [ "DTC_FLAGS=-@" ];
+
+  buildFlags = [
+    "Image"
+    "Image.gz"
+    "modules"
+    "dtbs"
+  ];
+
+  extraMeta = with lib; {
+    description = "Linux kernel and modules for Xiaomi Pad 5 (nabu)";
+    homepage = "https://www.kernel.org/";
+    license = licenses.gpl2;
+    platforms = platforms.aarch64;
   };
 
   kernelPatches = [
@@ -213,28 +229,5 @@ buildLinux {
       name = "nt36xxx-pen-resolution2";
       patch = ./patches/0049-nt36xxx-Change-pen-resolution-This-is-done-to-be-abl.patch;
     }
-  ];
-
-  makeFlags = [ "-s" ];
-
-  configfile = ./kernel/config;
-
-  extraLocalVersion = "-3-nabu";
-
-  extraMeta = with lib; {
-    description = "Linux kernel and modules for Xiaomi Pad 5 (nabu)";
-    homepage = "https://www.kernel.org/";
-    license = licenses.gpl2;
-    platforms = platforms.aarch64;
-  };
-
-  postBuild = ''
-    make $makeFlags DTC_FLAGS="-@" dtbs
-  '';
-
-  installTargets = [
-    "Image"
-    "Image.gz"
-    "modules"
   ];
 }
