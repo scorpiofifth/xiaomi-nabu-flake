@@ -8,18 +8,16 @@ jobs:
       actions: write
       contents: read
     steps:
-      - name: Update apt cache
-        run: sudo apt-get update
-
-      - name: Install tools
-        run: |
-          sudo apt-get install -y \
-            git arch-install-scripts wget libarchive-tools e2fsprogs pigz dosfstools
-
       - name: Checkout repository
         uses: actions/checkout@v7
         with:
           path: repo
+
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            git arch-install-scripts wget libarchive-tools e2fsprogs pigz dosfstools
 
       - name: Create and mount image
         run: |
@@ -48,23 +46,24 @@ jobs:
           wget -qO "ArchLinuxARM-aarch64-latest.tar.gz" \
             "http://os.archlinuxarm.org/os/ArchLinuxARM-aarch64-latest.tar.gz"
 
-      - name: Build rootfs-extractor image
+      - name: Extract rootfs
         run: |
+          echo "::group::Build rootfs-extractor image"
           echo '
           FROM alpine:latest
           RUN apk add --no-cache libarchive-tools
           ENTRYPOINT ["/bin/sh"]
           ' > Dockerfile
           docker build -t rootfs-extractor .
-
-      - name: Extract rootfs
-        run: |
+          echo "::endgroup::"
+          echo "::group::Extract"
           docker run --rm \
             -v ${{ github.workspace }}/ArchLinuxARM-aarch64-latest.tar.gz:/rootfs.tar \
             -v ${{ github.workspace }}/mountpoint:/mountpoint \
             rootfs-extractor -c "
               cd /mountpoint && bsdtar -xpf /rootfs.tar
             "
+          echo "::endgroup::"
 
       - name: Init pacman key store
         run: |
