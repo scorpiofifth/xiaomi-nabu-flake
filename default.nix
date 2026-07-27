@@ -215,7 +215,7 @@ buildLinux {
     }
   ];
 
-  configfile = ./config;
+  configfile = ./kernel/config;
 
   extraLocalVersion = "-3-nabu";
 
@@ -227,6 +227,12 @@ buildLinux {
   };
 
   postBuild = ''
-    make $makeFlags dtbs
+    make $makeFlags DTC_FLAGS="-@" dtbs
   '';
+
+  installTargets = [
+    "Image"
+    "Image.gz"
+    "modules"
+  ];
 }
