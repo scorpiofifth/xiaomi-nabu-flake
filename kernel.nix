@@ -17,6 +17,8 @@
   lz4,
   xz,
   zlib,
+
+  python3,
 }:
 stdenv.mkDerivation {
   pname = "linux-nabu";
@@ -28,6 +30,7 @@ stdenv.mkDerivation {
   };
 
   nativeBuildInputs = [
+    # AI suggest
     flex
     bison
     perl
@@ -43,6 +46,9 @@ stdenv.mkDerivation {
     lz4
     xz
     zlib
+
+    # Error suggest
+    python3
   ];
 
   patchPhase = ''
