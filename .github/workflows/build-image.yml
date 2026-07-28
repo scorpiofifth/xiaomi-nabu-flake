@@ -1,5 +1,6 @@
 name: Build image
 on: workflow_dispatch
+
 jobs:
   build-image:
     name: Build image
@@ -22,17 +23,40 @@ jobs:
           sudo apt update
           # Ensure qemu-system is available (qemu-user-static alone can be insufficient).
           sudo apt install -y qemu-user-static qemu-system qemu-system-arm qemu-system-aarch64 binfmt-support
-          # Create 12G swap (fallocate may not be available in some runners)
+          # Create 24G swap (fallocate may not be available in some runners)
           if ! sudo swapon --show | grep -q '/swapfile'; then
-            sudo fallocate -l 12G /swapfile || sudo dd if=/dev/zero of=/swapfile bs=1M count=12288
+            echo "Creating 24G swapfile at /swapfile"
+            sudo fallocate -l 24G /swapfile || sudo dd if=/dev/zero of=/swapfile bs=1M count=24576
             sudo chmod 600 /swapfile
             sudo mkswap /swapfile
             sudo swapon /swapfile
+          else
+            echo "Swapfile already active"
           fi
+          # Diagnostics: show that swap is active and memory available
+          echo "=== free -h ==="
+          free -h || true
+          echo "=== swapon --show ==="
+          sudo swapon --show || true
+          echo "=== vmstat 1 5 ==="
+          vmstat 1 5 || true
       - name: Package the software
         run: |
           # Limit concurrency to avoid host OOM while qemu runs inside the build
           nix build --print-build-logs --max-jobs 1 --cores 1 .#image --system aarch64-linux
+      - name: Build diagnostics (always)
+        if: always()
+        run: |
+          echo "=== dmesg tail (last 200 lines) ==="
+          sudo dmesg | tail -n 200 || true
+          echo "=== journalctl -k -n 200 (kernel messages) ==="
+          sudo journalctl -k -n 200 --no-pager || true
+          echo "=== ps aux sorted by RSS (top processes) ==="
+          ps aux --sort=-rss | head -n 40 || true
+          echo "=== free -h ==="
+          free -h || true
+          echo "=== swapon --show ==="
+          sudo swapon --show || true
       - name: Remove swap
         if: always()
         run: |
