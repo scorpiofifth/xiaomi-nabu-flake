@@ -1,21 +1,21 @@
 # / AArch64 Xiaomi Pad 5
 # Maintainer: rodriguezst <git@rodriguezst.es>
 
-buildarch=8
+buildarch=8                                                     # -> 8
 
-pkgbase=linux-nabu
-pkgver=6.16.0
-_kernelname=${pkgbase#linux}
-_desc="AArch64 Xiaomi Pad 5"
-_srcname="linux-${pkgver/%.0/}"
-_dtbfile='qcom/sm8150-xiaomi-nabu.dtb'
-pkgrel=3
-arch=('aarch64')
-url="http://www.kernel.org/"
-license=('GPL2')
+pkgbase=linux-nabu                                              # -> linux-nabu
+pkgver=6.16.0                                                   # -> 6.16.0
+_kernelname=${pkgbase#linux}                                    # -> nabu
+_desc="AArch64 Xiaomi Pad 5"                                    # -> AArch64 Xiaomi Pad 5
+_srcname="linux-${pkgver/%.0/}"                                 # -> linux-6.16
+_dtbfile='qcom/sm8150-xiaomi-nabu.dtb'                          # -> qcom/sm8150-xiaomi-nabu.dtb
+pkgrel=3                                                        # -> 3
+arch=('aarch64')                                                # -> ('aarch64')
+url="http://www.kernel.org/"                                    # -> http://www.kernel.org/
+license=('GPL2')                                                # -> ('GPL2')
 makedepends=('xmlto' 'docbook-xsl' 'kmod' 'inetutils' 'bc' 'git' 'uboot-tools' 'dtc' 'python3' 'systemd-ukify' 'sbsigntools')
-options=('!strip')
-source=("http://www.kernel.org/pub/linux/kernel/v6.x/${_srcname}.tar.xz"
+options=('!strip')                                              # -> ('!strip')
+source=("http://www.kernel.org/pub/linux/kernel/v6.x/${_srcname}.tar.xz"  # -> http://www.kernel.org/pub/linux/kernel/v6.x/linux-6.16.tar.xz
         'config'
         '0001-SM8150-Add-uart13-node.patch'
         '0002-SM8150-Add-device-tree-for-Xiaomi-Pad-5.patch'
@@ -121,15 +121,16 @@ sha256sums=('1a4be2fe6b5246aa4ac8987a8a4af34c42a8dd7d08b46ab48516bcc1befbcd83'
             '4521b5fc8964affe10f14c5bfa3ca9d12011c986f1f07d9d150d0726308fb9a1')
 
 prepare() {
-  cd $_srcname
+  cd $_srcname                                                  # -> cd linux-6.16
 
   echo "Setting version..."
-  echo "-$pkgrel" > localversion.10-pkgrel
-  echo "${pkgbase#linux}" > localversion.20-pkgname
+  echo "-$pkgrel" > localversion.10-pkgrel                      # writes "-3" to localversion.10-pkgrel
+  echo "${pkgbase#linux}" > localversion.20-pkgname             # writes "nabu" to localversion.20-pkgname
+                                                                 # final kernel version = "6.16.0-3nabu"
 
   # add upstream patch
-  if [[ -f ../patch-${pkgver} ]]; then
-    git apply --whitespace=nowarn ../patch-${pkgver}
+  if [[ -f ../patch-${pkgver} ]]; then                          # checks for ../patch-6.16.0
+    git apply --whitespace=nowarn ../patch-${pkgver}            # applies ../patch-6.16.0 if exists
   fi
 
   local src
@@ -138,7 +139,7 @@ prepare() {
     src="${src##*/}"
     [[ $src = *.patch ]] || continue
     msg2 "Applying patch: $src..."
-    patch -Np1 < "../$src" # || true
+    patch -Np1 < "../$src" # || true                            # applies each of the 49 patches
   done
 
   cat "${srcdir}/config" > ./.config
@@ -146,71 +147,71 @@ prepare() {
 }
 
 build() {
-  cd ${_srcname}
+  cd ${_srcname}                                                # -> cd linux-6.16
 
   # get kernel version
   make prepare
-  make -s kernelrelease > version
+  make -s kernelrelease > version                               # version = "6.16.0-3nabu"
 
   # build!
   unset LDFLAGS
-  make ${MAKEFLAGS} Image Image.gz modules
+  make ${MAKEFLAGS} Image Image.gz modules                     # -> make -jN Image Image.gz modules
   # Generate device tree blobs with symbols to support applying device tree overlays in U-Boot
   make ${MAKEFLAGS} DTC_FLAGS="-@" dtbs
 }
 
 _package_common() {
   echo "Installing boot image and dtbs..."
-  install -Dm644 arch/arm64/boot/Image "${pkgdir}/boot/vmlinux-${kernver}"
-  install -Dm644 arch/arm64/boot/Image.gz "${pkgdir}/boot/vmlinuz-${kernver}"
-  install -Dm644 arch/arm64/boot/dts/${_dtbfile} "${pkgdir}/boot/dtb-${kernver}"
+  install -Dm644 arch/arm64/boot/Image "${pkgdir}/boot/vmlinux-${kernver}"      # -> .../boot/vmlinux-6.16.0-3nabu
+  install -Dm644 arch/arm64/boot/Image.gz "${pkgdir}/boot/vmlinuz-${kernver}"   # -> .../boot/vmlinuz-6.16.0-3nabu
+  install -Dm644 arch/arm64/boot/dts/${_dtbfile} "${pkgdir}/boot/dtb-${kernver}" # -> .../boot/dtb-6.16.0-3nabu (dtb=qcom/sm8150-xiaomi-nabu.dtb)
 
   echo "Installing modules..."
   make INSTALL_MOD_PATH="$pkgdir/usr" INSTALL_MOD_STRIP=1 DEPMOD=/doesnt/exist modules_install
 
   # remove build link
-  rm "$pkgdir/usr/lib/modules/$kernver/build"
+  rm "$pkgdir/usr/lib/modules/$kernver/build"                  # removes /usr/lib/modules/6.16.0-3nabu/build
 }
 
 _package() {
-  pkgdesc="The Linux Kernel and modules - ${_desc}"
+  pkgdesc="The Linux Kernel and modules - ${_desc}"             # -> "The Linux Kernel and modules - AArch64 Xiaomi Pad 5"
   depends=('coreutils' 'linux-firmware' 'kmod' 'mkinitcpio>=0.7')
   optdepends=('wireless-regdb: to set the correct wireless channels of your country')
-  provides=("linux=${pkgver}" "KSMBD-MODULE" "WIREGUARD-MODULE")
+  provides=("linux=${pkgver}" "KSMBD-MODULE" "WIREGUARD-MODULE") # -> ("linux=6.16.0" "KSMBD-MODULE" "WIREGUARD-MODULE")
   conflicts=('linux')
-  install=${pkgname}.install
+  install=${pkgname}.install                                     # -> linux-nabu.install
 
-  cd $_srcname
-  local kernver="$(<version)"
+  cd $_srcname                                                   # -> cd linux-6.16
+  local kernver="$(<version)"                                    # -> "6.16.0-3nabu"
 
   _package_common
 
   # sed expression for following substitutions
   local _subst="
-    s|%PKGBASE%|${pkgbase}|g
-    s|%KERNVER%|${kernver}|g
+    s|%PKGBASE%|${pkgbase}|g                                     # replaces %PKGBASE% with linux-nabu
+    s|%KERNVER%|${kernver}|g                                     # replaces %KERNVER% with 6.16.0-3nabu
   "
 
   # install mkinitcpio preset file
   sed "${_subst}" ../linux.preset |
-    install -Dm644 /dev/stdin "${pkgdir}/etc/mkinitcpio.d/${pkgbase}.preset"
+    install -Dm644 /dev/stdin "${pkgdir}/etc/mkinitcpio.d/${pkgbase}.preset"  # -> /etc/mkinitcpio.d/linux-nabu.preset
 
   # rather than use another hook (90-linux.hook) rely on mkinitcpio's 90-mkinitcpio-install.hook
   # which avoids a double run of mkinitcpio that can occur
   install -d "${pkgdir}/usr/lib/initcpio/"
-  echo "dummy file to trigger mkinitcpio to run" > "${pkgdir}/usr/lib/initcpio/$(<version)"
+  echo "dummy file to trigger mkinitcpio to run" > "${pkgdir}/usr/lib/initcpio/$(<version)"  # -> .../initcpio/6.16.0-3nabu
 }
 
 _package-uki() {
-  pkgdesc="The Linux Kernel and modules - ${_desc} (UKI)"
+  pkgdesc="The Linux Kernel and modules - ${_desc} (UKI)"        # -> "The Linux Kernel and modules - AArch64 Xiaomi Pad 5 (UKI)"
   depends=('coreutils' 'linux-firmware' 'kmod')
   optdepends=('wireless-regdb: to set the correct wireless channels of your country')
-  provides=("linux=${pkgver}" "KSMBD-MODULE" "WIREGUARD-MODULE")
+  provides=("linux=${pkgver}" "KSMBD-MODULE" "WIREGUARD-MODULE") # -> ("linux=6.16.0" "KSMBD-MODULE" "WIREGUARD-MODULE")
   conflicts=('linux')
   #install=${pkgname}.install
 
-  cd $_srcname
-  local kernver="$(<version)"
+  cd $_srcname                                                   # -> cd linux-6.16
+  local kernver="$(<version)"                                    # -> "6.16.0-3nabu"
 
   _package_common
 
@@ -235,27 +236,27 @@ _package-uki() {
   # Generate and sign UKI
   mkdir -p "${pkgdir}/boot/efi/EFI/arch"
   ukify build \
-    --linux="${pkgdir}/boot/vmlinux-${kernver}" \
+    --linux="${pkgdir}/boot/vmlinux-${kernver}" \               # -> --linux=.../vmlinux-6.16.0-3nabu
     --cmdline="${cmdline_console} ${cmdline_root} ${cmdline_quiet} ${cmdline_other}" \
-    --uname="${kernver}" \
-    --devicetree="${pkgdir}/boot/dtb-${kernver}" \
+    --uname="${kernver}" \                                       # -> --uname=6.16.0-3nabu
+    --devicetree="${pkgdir}/boot/dtb-${kernver}" \               # -> --devicetree=.../dtb-6.16.0-3nabu
     --os-release="Arch Linux ARM" \
     --secureboot-private-key="$SB_SIGN_KEY" \
     --secureboot-certificate="$SB_SIGN_CERT" \
-    --output="${pkgdir}/boot/efi/EFI/arch/uki-${kernver}.efi"
+    --output="${pkgdir}/boot/efi/EFI/arch/uki-${kernver}.efi"   # -> .../uki-6.16.0-3nabu.efi
 }
 
 _package-headers() {
-  pkgdesc="Header files and scripts for building modules for linux kernel - ${_desc}"
-  provides=("linux-headers=${pkgver}")
+  pkgdesc="Header files and scripts for building modules for linux kernel - ${_desc}"  # -> ... - AArch64 Xiaomi Pad 5
+  provides=("linux-headers=${pkgver}")                          # -> ("linux-headers=6.16.0")
   conflicts=('linux-headers')
 
-  cd $_srcname
-  local builddir="$pkgdir/usr/lib/modules/$(<version)/build"
+  cd $_srcname                                                  # -> cd linux-6.16
+  local builddir="$pkgdir/usr/lib/modules/$(<version)/build"   # -> $pkgdir/usr/lib/modules/6.16.0-3nabu/build
 
   echo "Installing build files..."
   install -Dt "$builddir" -m644 .config Makefile Module.symvers System.map \
-    localversion.* version vmlinux
+    localversion.* version vmlinux                               # localversion.* expands to localversion.10-pkgrel + localversion.20-pkgname
   install -Dt "$builddir/kernel" -m644 kernel/Makefile
   install -Dt "$builddir/arch/arm64" -m644 arch/arm64/Makefile
   cp -t "$builddir" -a scripts
@@ -321,12 +322,12 @@ _package-headers() {
 
   echo "Adding symlink..."
   mkdir -p "$pkgdir/usr/src"
-  ln -sr "$builddir" "$pkgdir/usr/src/$pkgbase"
+  ln -sr "$builddir" "$pkgdir/usr/src/$pkgbase"                 # -> /usr/src/linux-nabu -> .../6.16.0-3nabu/build
 }
 
-pkgname=("${pkgbase}" "${pkgbase}-headers" "${pkgbase}-uki")
+pkgname=("${pkgbase}" "${pkgbase}-headers" "${pkgbase}-uki")   # -> ("linux-nabu" "linux-nabu-headers" "linux-nabu-uki")
 for _p in ${pkgname[@]}; do
-  eval "package_${_p}() {
-    _package${_p#${pkgbase}}
-  }"
-done
+  eval "package_${_p}() {                                        # generates:
+    _package${_p#${pkgbase}}                                     #   package_linux-nabu()         -> _package()
+  }"                                                             #   package_linux-nabu-headers() -> _package-headers()
+done                                                             #   package_linux-nabu-uki()     -> _package-uki()

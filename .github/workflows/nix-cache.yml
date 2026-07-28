@@ -1,7 +1,8 @@
-name: "Nix Cache"
+name: Nix Cache
 on: workflow_dispatch
 jobs:
   nix-cache:
+    name: Nix Cache
     runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout
