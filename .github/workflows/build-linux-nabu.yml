@@ -19,4 +19,4 @@ jobs:
       - name: Package the software
         run: |
           echo "::group::Setup Environment"
-          nix build .#linux-nabu
+          nix build --print-build-logs .

@@ -49,18 +49,13 @@ stdenv.mkDerivation {
   ];
 
   patchPhase = ''
-    # NOTE: it was to turn the log smaller
-    echo "::endgroup::"
-
     for patch in $(ls ${./patches}/*.patch | sort); do
-      echo "::group:: patchPhase: $(basename $patch)"
+      echo "patchPhase: $(basename $patch)"
       patch -Np1 < "$patch"
-      echo "::endgroup::"
     done
   '';
 
   configurePhase = ''
-    echo "::group:: configurePhase"
     echo "-3" > localversion.10-pkgrel
     echo "-nabu" > localversion.20-pkgname
     cp ${./kernel.config} ./.config
@@ -69,11 +64,9 @@ stdenv.mkDerivation {
       CROSS_COMPILE=${stdenv.cc.targetPrefix} \
       HOSTCC=${buildPackages.stdenv.cc}/bin/cc \
       olddefconfig
-    echo "::endgroup::"
   '';
 
   buildPhase = ''
-    echo "::group:: buildPhase"
     make \
       ARCH=arm64 \
       CROSS_COMPILE=${stdenv.cc.targetPrefix} \
@@ -94,16 +87,13 @@ stdenv.mkDerivation {
       CROSS_COMPILE=${stdenv.cc.targetPrefix} \
       HOSTCC=${buildPackages.stdenv.cc}/bin/cc \
       -j$(nproc) DTC_FLAGS="-@" dtbs
-    echo "::endgroup::"
   '';
 
   enableParallelBuilding = true;
 
   installPhase = ''
-    echo "::group:: installPhase"
     mkdir -p $out
     cp -r . $out/
-    echo "::endgroup::"
   '';
 
   dontFixup = true;
