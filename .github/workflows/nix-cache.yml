@@ -18,4 +18,4 @@ jobs:
       - name: Package the `default.nix`
         run: |
           nix-build -E \
-            '(import <nixpkgs> { system = "aarch64-linux"; }).callPackage ./default.nix { }'
+            '(import <nixpkgs> { system = "aarch64-linux"; }).callPackage ./kernel.nix { }'
