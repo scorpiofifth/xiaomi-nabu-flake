@@ -1,8 +1,8 @@
-name: Build linux-nabu
+name: Build image
 on: workflow_dispatch
 jobs:
-  build-linux-nabu:
-    name: Build linux-nabu
+  build-image:
+    name: Build image
     runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout
@@ -18,4 +18,4 @@ jobs:
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - name: Package the software
         run: |
-          nix build --print-build-logs .#linux-nabu
+          nix build --print-build-logs .#image
