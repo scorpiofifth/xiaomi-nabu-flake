@@ -78,7 +78,21 @@ stdenv.mkDerivation {
 
   enableParallelBuilding = true;
 
-  dontInstall = true;
+  # dontInstall = true;
+  installPhase = ''
+    echo "::group:: installPhase"
+    mkdir -p $out
+    cp -r . $out/
+    # mkdir -p $out/boot
+    # cp arch/arm64/boot/Image $out/boot/
+    # cp arch/arm64/boot/Image.gz $out/boot/
+    # find . -name "*.dtb" -exec cp {} $out/boot/ \;
+    # cp -r arch/arm64/boot/dts $out/boot/
+    # cp .config $out/
+    # cp version $out/
+    echo "::endgroup::"
+  '';
+
   dontFixup = true;
 
   meta = with lib; {
