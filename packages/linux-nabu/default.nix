@@ -62,7 +62,7 @@ stdenv.mkDerivation {
     echo "::group:: configurePhase"
     echo "-3" > localversion.10-pkgrel
     echo "-nabu" > localversion.20-pkgname
-    cp ${./kernel/config} ./.config
+    cp ${./kernel.config} ./.config
     make olddefconfig
     echo "::endgroup::"
   '';
@@ -78,7 +78,6 @@ stdenv.mkDerivation {
 
   enableParallelBuilding = true;
 
-  # dontInstall = true;
   installPhase = ''
     echo "::group:: installPhase"
     mkdir -p $out
