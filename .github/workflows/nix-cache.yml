@@ -17,5 +17,6 @@ jobs:
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - name: Package the `default.nix`
         run: |
+          echo "::group::Setup Environment"
           nix-build -E \
             '(import <nixpkgs> { system = "aarch64-linux"; }).callPackage ./kernel.nix { }'

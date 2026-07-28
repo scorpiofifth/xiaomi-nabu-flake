@@ -52,11 +52,14 @@ stdenv.mkDerivation {
   ];
 
   patchPhase = ''
+    echo "::endgroup::" # NOTE: it was to turn the log smaller
+    echo "::group::Applying patch..."
     for patch in $(ls ${./patches}/*.patch | sort); do
-      echo "::group::Applying patch: $(basename $patch)..."
+      echo "::group::$(basename $patch)"
       patch -Np1 < "$patch"
       echo "::endgroup::"
     done
+    echo "::endgroup::"
   '';
 
   configurePhase = ''
