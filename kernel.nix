@@ -53,24 +53,28 @@ stdenv.mkDerivation {
 
   patchPhase = ''
     for patch in $(ls ${./patches}/*.patch | sort); do
-      echo "Applying patch: $(basename $patch)..."
+      echo "::group::Applying patch: $(basename $patch)..."
       patch -Np1 < "$patch"
+      echo "::endgroup::"
     done
   '';
 
   configurePhase = ''
+    echo "::group:: Adding config..."
     echo "-3" > localversion.10-pkgrel
     echo "-nabu" > localversion.20-pkgname
-
     cp ${./kernel/config} ./.config
     make olddefconfig
+    echo "::endgroup::"
   '';
 
   buildPhase = ''
+    echo "::group:: Build phase"
     make prepare
     make -s kernelrelease > version
     make -j$(nproc) Image Image.gz modules
     make -j$(nproc) DTC_FLAGS="-@" dtbs
+    echo "::endgroup::"
   '';
 
   enableParallelBuilding = true;
