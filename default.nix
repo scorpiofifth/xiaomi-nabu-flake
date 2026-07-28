@@ -2,18 +2,16 @@
   lib,
   fetchurl,
   buildLinux,
-  writeText,
 }:
 buildLinux {
   version = "6.16.0";
-  modDirVersion = "6.16.0";
+  extraLocalVersion = "-3-nabu";
 
   src = fetchurl {
     url = "https://www.kernel.org/pub/linux/kernel/v6.x/linux-6.16.tar.xz";
     sha256 = "1a4be2fe6b5246aa4ac8987a8a4af34c42a8dd7d08b46ab48516bcc1befbcd83";
   };
 
-  extraLocalVersion = "-3-nabu";
   configfile = ./kernel/config;
   ignoreConfigErrors = true;
   makeFlags = [ "DTC_FLAGS=-@" ];
@@ -51,41 +49,6 @@ buildLinux {
     {
       name = "nt36523-touchscreen";
       patch = ./patches/0005-Input-Add-nt36523-touchscreen-driver.patch;
-    }
-    {
-      name = "nt36523-fix-mtk-spi-compat";
-      patch = writeText "0005a-nt36523-fix-mtk-spi-config.patch" ''
-        --- a/drivers/input/touchscreen/nt36523/nt36xxx.c
-        +++ b/drivers/input/touchscreen/nt36523/nt36xxx.c
-        @@ -1278,13 +1278,16 @@ static int32_t nvt_ts_probe(struct spi_device *client)
-         	ret = spi_setup(ts->client);
-         	if (ret < 0) {
-         		NVT_ERR("Failed to perform SPI setup\n");
-         		goto err_spi_setup;
-         	}
-         
-        -#ifdef CONFIG_MTK_SPI
-        -    /* old usage of MTK spi API */
-        -    memcpy(&ts->spi_ctrl, &spi_ctrdata, sizeof(struct mt_chip_conf));
-        -    ts->client->controller_data = (void *)&ts->spi_ctrl;
-        -#endif
-        +/* Note: MTK SPI controller configuration should be done via device tree (DTS)
-        + * in modern kernel versions. The old CONFIG_MTK_SPI and CONFIG_SPI_MT65XX
-        + * configuration methods using memcpy are deprecated and no longer compatible
-        + * with Linux 6.x kernels. SPI parameters are now set through:
-        + * - Device tree node properties
-        + * - spi_device->mode and spi_device->max_speed_hz
-        + * - Standard SPI framework APIs
-        + */
-         
-        -#ifdef CONFIG_SPI_MT65XX
-        -    /* new usage of MTK spi API */
-        -    memcpy(&ts->spi_ctrl, &spi_ctrdata, sizeof(struct mtk_chip_config));
-        -    ts->client->controller_data = (void *)&ts->spi_ctrl;
-        -#endif
-
-         	NVT_LOG("mode=%d, max_speed_hz=%d\n", ts->client->mode, ts->client->max_speed_hz);
-      '';
     }
     {
       name = "nt36xxx-autoload";

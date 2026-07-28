@@ -1,0 +1,71 @@
+# This workflow builds an Arch Linux package without
+# GPG signature and using self-signed SB keys (for UKI)
+# USED ONLY TO TEST CHANGES BEFORE PR
+
+name: Build Test Package
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04-arm
+
+    permissions:
+      packages: read
+      contents: write
+
+    container:
+      image: ghcr.io/rodriguezst/archlinux-builder:latest
+
+    steps:
+      - name: Update system
+        run: sudo pacman -Syu --noconfirm
+
+      - name: Setup git
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Solve path problem
+        run: |
+          cp ./patches/*.patch .
+          cp ./kernel/* .
+          ls .
+
+      - name: Configure makepkg
+        run: |
+          echo "PACKAGER='GitHub Actions Builder <github-actions[bot]@users.noreply.github.com>'" >> ~/.makepkg.conf
+          echo "PKGEXT='.pkg.tar.xz'" >> ~/.makepkg.conf
+          echo "SRCEXT='.src.tar.gz'" >> ~/.makepkg.conf
+          echo "MAKEFLAGS='-j$(nproc)'" >> ~/.makepkg.conf
+
+      - name: Generate secure boot test keys
+        run: |
+          sudo pacman -S --needed --noconfirm openssl
+          openssl genrsa -out sb.key 2048
+          openssl req -new -x509 -key sb.key -out sb.crt -days 365 \
+            -subj "/C=US/ST=Test/L=Test/O=GitHub Actions Test/CN=Test SB Certificate"
+          echo "Generated secure boot test keys:"
+          ls -la sb.key sb.crt
+          openssl x509 -in sb.crt -text -noout | head -n 10
+
+      - name: Build package
+        shell: bash
+        run: |
+          export SB_SIGN_KEY=$(pwd)/sb.key
+          export SB_SIGN_CERT=$(pwd)/sb.crt
+          makepkg -s --noconfirm --clean --skippgpcheck
+          rm -f sb.key sb.crt
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: built-packages
+          path: |
+            *.pkg.tar.xz
+            *.pkg.tar.xz.sig
