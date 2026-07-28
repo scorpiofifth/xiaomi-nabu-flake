@@ -1,24 +1,23 @@
 {
-  lib,
-  stdenv,
+  bc,
+  bison,
+  cpio,
+  dtc,
+  elfutils,
   fetchurl,
   flex,
-  bison,
-  perl,
-  bc,
-  openssl,
-  elfutils,
-  pahole,
-  dtc,
-  ubootTools,
-  kmod,
-  cpio,
   gzip,
+  kmod,
+  lib,
   lz4,
+  openssl,
+  pahole,
+  perl,
+  python3,
+  stdenv,
+  ubootTools,
   xz,
   zlib,
-
-  python3,
 }:
 stdenv.mkDerivation {
   pname = "linux-nabu";
@@ -30,25 +29,22 @@ stdenv.mkDerivation {
   };
 
   nativeBuildInputs = [
-    # AI suggest
-    flex
-    bison
-    perl
     bc
-    openssl
-    elfutils
-    pahole
-    dtc
-    ubootTools
-    kmod
+    bison
     cpio
+    dtc
+    elfutils
+    flex
     gzip
+    kmod
     lz4
+    openssl
+    pahole
+    perl
+    python3
+    ubootTools
     xz
     zlib
-
-    # Error suggest
-    python3
   ];
 
   patchPhase = ''
@@ -81,6 +77,9 @@ stdenv.mkDerivation {
   '';
 
   enableParallelBuilding = true;
+
+  dontInstall = true;
+  dontFixup = true;
 
   meta = with lib; {
     description = "The Linux Kernel - AArch64 Xiaomi Pad 5";
