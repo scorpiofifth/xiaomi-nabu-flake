@@ -17,10 +17,26 @@ jobs:
         with:
           name: nixpkgs-for-nabu
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
-      - name: Install cross system tool
+      - name: Prepare runner for QEMU/Nix builds
         run: |
           sudo apt update
-          sudo apt install -y qemu-user-static binfmt-support
+          # Ensure qemu-system is available (qemu-user-static alone can be insufficient).
+          sudo apt install -y qemu-user-static qemu-system qemu-system-arm qemu-system-aarch64 binfmt-support
+          # Create 12G swap (fallocate may not be available in some runners)
+          if ! sudo swapon --show | grep -q '/swapfile'; then
+            sudo fallocate -l 12G /swapfile || sudo dd if=/dev/zero of=/swapfile bs=1M count=12288
+            sudo chmod 600 /swapfile
+            sudo mkswap /swapfile
+            sudo swapon /swapfile
+          fi
       - name: Package the software
         run: |
-          nix build --print-build-logs .#image --system aarch64-linux
+          # Limit concurrency to avoid host OOM while qemu runs inside the build
+          nix build --print-build-logs --max-jobs 1 --cores 1 .#image --system aarch64-linux
+      - name: Remove swap
+        if: always()
+        run: |
+          if sudo swapon --show | grep -q '/swapfile'; then
+            sudo swapoff /swapfile || true
+            sudo rm -f /swapfile || true
+          fi
