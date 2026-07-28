@@ -1,6 +1,7 @@
 {
   bc,
   bison,
+  buildPackages,
   cpio,
   dtc,
   elfutils,
@@ -63,16 +64,36 @@ stdenv.mkDerivation {
     echo "-3" > localversion.10-pkgrel
     echo "-nabu" > localversion.20-pkgname
     cp ${./kernel.config} ./.config
-    make olddefconfig
+    make \
+      ARCH=arm64 \
+      CROSS_COMPILE=${stdenv.cc.targetPrefix} \
+      HOSTCC=${buildPackages.stdenv.cc}/bin/cc \
+      olddefconfig
     echo "::endgroup::"
   '';
 
   buildPhase = ''
     echo "::group:: buildPhase"
-    make prepare
-    make -s kernelrelease > version
-    make -j$(nproc) Image Image.gz modules
-    make -j$(nproc) DTC_FLAGS="-@" dtbs
+    make \
+      ARCH=arm64 \
+      CROSS_COMPILE=${stdenv.cc.targetPrefix} \
+      HOSTCC=${buildPackages.stdenv.cc}/bin/cc \
+      prepare
+    make \
+      ARCH=arm64 \
+      CROSS_COMPILE=${stdenv.cc.targetPrefix} \
+      HOSTCC=${buildPackages.stdenv.cc}/bin/cc \
+      -s kernelrelease > version
+    make \
+      ARCH=arm64 \
+      CROSS_COMPILE=${stdenv.cc.targetPrefix} \
+      HOSTCC=${buildPackages.stdenv.cc}/bin/cc \
+      -j$(nproc) Image Image.gz modules
+    make \
+      ARCH=arm64 \
+      CROSS_COMPILE=${stdenv.cc.targetPrefix} \
+      HOSTCC=${buildPackages.stdenv.cc}/bin/cc \
+      -j$(nproc) DTC_FLAGS="-@" dtbs
     echo "::endgroup::"
   '';
 
@@ -82,13 +103,6 @@ stdenv.mkDerivation {
     echo "::group:: installPhase"
     mkdir -p $out
     cp -r . $out/
-    # mkdir -p $out/boot
-    # cp arch/arm64/boot/Image $out/boot/
-    # cp arch/arm64/boot/Image.gz $out/boot/
-    # find . -name "*.dtb" -exec cp {} $out/boot/ \;
-    # cp -r arch/arm64/boot/dts $out/boot/
-    # cp .config $out/
-    # cp version $out/
     echo "::endgroup::"
   '';
 

@@ -2,14 +2,24 @@
   description = "A flake for Xiaomi Pad 5(nabu)";
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
   outputs =
-    { nixpkgs }@flakes:
+    { self, nixpkgs }@flakes:
     let
-      pkgs = nixpkgs.legacyPackages.aarch64-linux;
+      forAllSystems = nixpkgs.lib.genAttrs [
+        "aarch64-linux"
+        "x86_64-linux"
+      ];
+      pkgsFor =
+        system:
+        import nixpkgs {
+          inherit system;
+          crossSystem =
+            if system == "x86_64-linux" then nixpkgs.lib.systems.examples.aarch64-multiplatform else null;
+        };
     in
     {
-      packages.aarch64-linux = {
-        default = flakes.self.packages.aarch64-linux.linux-nabu;
-        linux-nabu = pkgs.callPackage ./packages/linux-nabu;
-      };
+      packages = forAllSystems (system: {
+        default = self.packages.${system}.linux-nabu;
+        linux-nabu = (pkgsFor system).callPackage ./packages/linux-nabu { };
+      });
     };
 }
