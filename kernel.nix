@@ -52,18 +52,18 @@ stdenv.mkDerivation {
   ];
 
   patchPhase = ''
-    echo "::endgroup::" # NOTE: it was to turn the log smaller
-    echo "::group::Applying patch..."
+    # NOTE: it was to turn the log smaller
+    echo "::endgroup::"
+
     for patch in $(ls ${./patches}/*.patch | sort); do
-      echo "::group::$(basename $patch)"
+      echo "::group:: patchPhase: $(basename $patch)"
       patch -Np1 < "$patch"
       echo "::endgroup::"
     done
-    echo "::endgroup::"
   '';
 
   configurePhase = ''
-    echo "::group:: Adding config..."
+    echo "::group:: configurePhase"
     echo "-3" > localversion.10-pkgrel
     echo "-nabu" > localversion.20-pkgname
     cp ${./kernel/config} ./.config
@@ -72,7 +72,7 @@ stdenv.mkDerivation {
   '';
 
   buildPhase = ''
-    echo "::group:: Build phase"
+    echo "::group:: buildPhase"
     make prepare
     make -s kernelrelease > version
     make -j$(nproc) Image Image.gz modules
