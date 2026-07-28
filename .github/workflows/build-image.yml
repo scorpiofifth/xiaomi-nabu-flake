@@ -22,7 +22,8 @@ jobs:
         run: |
           sudo apt update
           # Ensure qemu-system is available (qemu-user-static alone can be insufficient).
-          sudo apt install -y qemu-user-static qemu-system qemu-system-arm qemu-system-aarch64 binfmt-support
+          # Install virtiofsd + FUSE3 so virtiofs can work
+          sudo apt install -y qemu-user-static qemu-system qemu-system-arm qemu-system-aarch64 binfmt-support virtiofsd libfuse3-3
           # Create 24G swap (fallocate may not be available in some runners)
           if ! sudo swapon --show | grep -q '/swapfile'; then
             echo "Creating 24G swapfile at /swapfile"
@@ -57,6 +58,16 @@ jobs:
           free -h || true
           echo "=== swapon --show ==="
           sudo swapon --show || true
+
+          # --- 以下为新增：打印构建失败 drv 的 nix 日志（如果有） ---
+          # 尝试在 /nix/store 中查找可能的 *-nixos-disk-image.drv 并打印其 nix 日志
+          drv=$(find /nix/store -name '*-nixos-disk-image.drv' -print -quit || true)
+          if [ -n "$drv" ]; then
+            echo "=== nix log for $drv ==="
+            nix log "$drv" || true
+          else
+            echo "No *-nixos-disk-image.drv file found in /nix/store"
+          fi
       - name: Remove swap
         if: always()
         run: |
