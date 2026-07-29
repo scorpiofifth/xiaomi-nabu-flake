@@ -9,7 +9,7 @@
     {
       packages.aarch64-linux.default = self.packages.x86_64-linux.default;
       packages.aarch64-linux.linux-nabu = self.packages.x86_64-linux.linux-nabu;
-      packages.aarch64-linux.linux-nabu-package = self.packages.x86_64-linux.linux-nabu;
+      packages.aarch64-linux.linux-nabu-package = self.packages.x86_64-linux.linux-nabu-package;
       packages.aarch64-linux.image = self.packages.x86_64-linux.image;
       packages.x86_64-linux.default = self.packages.x86_64-linux.image;
       packages.x86_64-linux.linux-nabu = pkgs.callPackage ./packages/linux-nabu { };
