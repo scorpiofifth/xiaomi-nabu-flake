@@ -6,7 +6,9 @@
 linuxKernel.manualConfig {
   pname = "linux-nabu";
   version = "6.16.0";
-  modDirVersion = "6.16.0-ARCH";
+
+  # NOTE: make it align with `CONFIG_LOCALVERSION` in `.config`
+  modDirVersion = "6.16.0-nabu-nixos";
 
   configfile = ./kernel.config;
 
