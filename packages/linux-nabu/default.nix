@@ -1,15 +1,20 @@
 {
-  buildLinux,
+  linuxKernel,
   fetchurl,
   ...
 }:
-(buildLinux {
+linuxKernel.manualConfig {
   pname = "linux-nabu";
   version = "6.16.0";
+
   src = fetchurl {
     url = "https://www.kernel.org/pub/linux/kernel/v6.x/linux-6.16.tar.xz";
     sha256 = "1a4be2fe6b5246aa4ac8987a8a4af34c42a8dd7d08b46ab48516bcc1befbcd83";
   };
+
+  target = "Image";
+  buildDTBs = true;
+
   kernelPatches = [
     {
       name = "0001-SM8150-Add-uart13-node.patch";
@@ -208,7 +213,4 @@
       patch = ./patches/0049-nt36xxx-Change-pen-resolution-This-is-done-to-be-abl.patch;
     }
   ];
-}).overrideAttrs
-  (prev: {
-    configfile = ./kernel.config;
-  })
+}
