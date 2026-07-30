@@ -6,6 +6,7 @@
 linuxKernel.manualConfig {
   pname = "linux-nabu";
   version = "6.16.0";
+  modDirVersion = "6.16.0-ARCH";
 
   configfile = ./kernel.config;
 

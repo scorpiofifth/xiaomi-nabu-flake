@@ -18,4 +18,4 @@ jobs:
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - name: Package the software
         run: |
-          nix build --print-build-logs .#linux-nabu
+          nix build --print-build-logs .#linux-nabu --system aarch64-linux
