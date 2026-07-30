@@ -20,6 +20,12 @@ linuxKernel.manualConfig {
   target = "Image";
   buildDTBs = true;
 
+  # NOTE: it is important to enable for building image
+  features = {
+    efiBootStub = true;
+    netfilterRPFilter = true;
+  };
+
   kernelPatches = [
     {
       name = "0001-SM8150-Add-uart13-node.patch";
