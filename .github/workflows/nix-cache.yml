@@ -3,7 +3,7 @@ on: workflow_dispatch
 jobs:
   nix-cache:
     name: Nix Cache
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -20,6 +20,4 @@ jobs:
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - name: Package the `default.nix`
         run: |
-          echo "::group::Setup Environment"
-          nix-build --keep-failed --expr \
-            '(import <nixpkgs> { system = "aarch64-linux"; }).callPackage ./kernel.nix { }'
+          nix build --print-build-logs .#image-from-x86

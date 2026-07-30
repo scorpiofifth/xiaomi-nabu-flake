@@ -6,7 +6,7 @@
   ...
 }:
 {
-  nixpkgs.hostPlatform = lib.mkDefault "aarch64-linux";
+  # nixpkgs.hostPlatform = lib.mkDefault "aarch64-linux";
 
   # TODO: check it out
   # fileSystems."/" = lib.mkForce {

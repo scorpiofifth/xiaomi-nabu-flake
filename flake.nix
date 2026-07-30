@@ -18,6 +18,23 @@
             modules = [
               ./config.nix
               ./hardware.nix
+              { nixpkgs.hostPlatform = "aarch64-linux"; }
+            ];
+          }).config.system.build.images.raw-efi
+        );
+        image-from-x86 = (
+          (nixpkgs.lib.nixosSystem {
+            specialArgs = { inherit flakes; };
+            modules = [
+              ./config.nix
+              ./hardware.nix
+              {
+                nixpkgs = {
+                  config.allowUnsupportedSystem = true;
+                  buildPlatform = "x86_64-linux";
+                  hostPlatform = "aarch64-linux";
+                };
+              }
             ];
           }).config.system.build.images.raw-efi
         );
