@@ -13,7 +13,10 @@
         image = (
           (nixpkgs.lib.nixosSystem {
             specialArgs = { inherit flakes; };
-            modules = [ ./config.nix ];
+            modules = [
+              ./config.nix
+              ./hardware.nix
+            ];
           }).config.system.build.images.raw-efi
         );
       };
