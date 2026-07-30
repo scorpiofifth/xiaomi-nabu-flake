@@ -5,21 +5,23 @@
   ...
 }:
 {
-  nixpkgs.hostPlatform.system = lib.mkDefault "aarch64-linux";
+  nixpkgs.hostPlatform = lib.mkDefault "aarch64-linux";
 
-  fileSystems."/" = lib.mkForce {
-    device = "/dev/disk/by-label/linux";
-    fsType = "ext4";
-  };
+  # TODO: check it out
+  # fileSystems."/" = lib.mkForce {
+  #   device = "/dev/disk/by-label/linux";
+  #   fsType = "ext4";
+  # };
 
-  fileSystems."/boot" = lib.mkForce {
-    device = "/dev/disk/by-label/esp";
-    fsType = "vfat";
-    options = [
-      "fmask=0077"
-      "dmask=0077"
-    ];
-  };
+  # TODO: check it out
+  # fileSystems."/boot" = lib.mkForce {
+  #   device = "/dev/disk/by-label/esp";
+  #   fsType = "vfat";
+  #   options = [
+  #     "fmask=0077"
+  #     "dmask=0077"
+  #   ];
+  # };
 
   boot = {
     kernelPackages = pkgs.linuxPackagesFor flakes.self.packages.aarch64-linux.linux-nabu;
