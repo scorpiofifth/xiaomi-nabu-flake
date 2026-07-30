@@ -4,7 +4,7 @@
   fetchurl,
 }:
 stdenvNoCC.mkDerivation (finalAttrs: {
-  pname = "xiaomi-nabu-firmware";
+  pname = "linux-firmware-xiaomi-nabu";
   version = "25.04.26";
 
   src = fetchurl {
