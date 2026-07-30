@@ -25,6 +25,7 @@
 
   boot = {
     kernelPackages = pkgs.linuxPackagesFor flakes.self.packages.aarch64-linux.linux-nabu;
+    kernelParams = [ "acpi=off" ];
     initrd.availableKernelModules = lib.mkForce [
       # NOTE: following are what the kernel actually has
       "efivarfs"
