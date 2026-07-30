@@ -1,4 +1,9 @@
-{ lib, flakes, ... }:
+{
+  pkgs,
+  lib,
+  flakes,
+  ...
+}:
 {
   system.stateVersion = "26.11";
   nixpkgs.hostPlatform.system = "aarch64-linux";
@@ -17,5 +22,5 @@
     ];
   };
 
-  # boot.kernelPackages = flakes.self.packages.aarch64-linux.linux-nabu;
+  boot.kernelPackages = pkgs.linuxPackagesFor flakes.self.packages.aarch64-linux.linux-nabu;
 }

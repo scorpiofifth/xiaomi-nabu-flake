@@ -7,18 +7,15 @@
       pkgs = nixpkgs.legacyPackages.aarch64-linux;
     in
     {
-      packages.aarch64-linux.default = self.packages.x86_64-linux.default;
-      packages.aarch64-linux.linux-nabu = self.packages.x86_64-linux.linux-nabu;
-      packages.aarch64-linux.linux-nabu-package = self.packages.x86_64-linux.linux-nabu-package;
-      packages.aarch64-linux.image = self.packages.x86_64-linux.image;
-      packages.x86_64-linux.default = self.packages.x86_64-linux.image;
-      packages.x86_64-linux.linux-nabu = pkgs.callPackage ./packages/linux-nabu { };
-      packages.x86_64-linux.linux-nabu-package = pkgs.callPackage ./packages/linux-nabu-package { };
-      packages.x86_64-linux.image = (
-        (nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit flakes; };
-          modules = [ ./config.nix ];
-        }).config.system.build.images.raw-efi
-      );
+      packages.aarch64-linux = {
+        default = self.packages.aarch64-linux.image;
+        linux-nabu = pkgs.callPackage ./packages/linux-nabu { };
+        image = (
+          (nixpkgs.lib.nixosSystem {
+            specialArgs = { inherit flakes; };
+            modules = [ ./config.nix ];
+          }).config.system.build.images.raw-efi
+        );
+      };
     };
 }
