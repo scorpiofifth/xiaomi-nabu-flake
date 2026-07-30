@@ -1,4 +1,4 @@
-name: Build linux-nabu
+name: Build linux-firmware-xiaomi-nabu
 on: workflow_dispatch
 jobs:
   build:
@@ -18,4 +18,4 @@ jobs:
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - name: Build
         run: |
-          nix build --print-build-logs .#linux-nabu --system aarch64-linux
+          nix build --print-build-logs .#linux-firmware-xiaomi-nabu --system aarch64-linux
