@@ -20,4 +20,4 @@ jobs:
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - name: Package the `default.nix`
         run: |
-          nix build --print-build-logs .#image-from-x86
+          nix build --print-build-logs .#image

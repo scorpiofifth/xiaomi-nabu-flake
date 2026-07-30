@@ -22,7 +22,10 @@
             ];
           }).config.system.build.images.raw-efi
         );
-        image-from-x86 = (
+      };
+      packages.x86_64-linux = {
+        default = self.packages.x86_64-linux.image;
+        image = (
           (nixpkgs.lib.nixosSystem {
             specialArgs = { inherit flakes; };
             modules = [
