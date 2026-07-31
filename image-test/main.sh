@@ -1,5 +1,7 @@
 # shellcheck disable=SC2154
 
+# NOTE: it seemd that all operations with
+# sudo can't use app from nixpkgs
 set -euo pipefail
 
 round_to_nearest() {
@@ -29,8 +31,8 @@ nixos-install \
 echo end debugger
 
 echo "creating img..."
-sudo truncate -s "${diskSize}M" "$diskImage"
-sudo parted --script "$diskImage" -- \
+truncate -s "${diskSize}M" "$diskImage"
+parted --script "$diskImage" -- \
   mklabel gpt \
   mkpart ESP fat32 8MiB "$bootSizeMiB" \
   set 1 boot on \
@@ -38,7 +40,7 @@ sudo parted --script "$diskImage" -- \
   mkpart primary ext4 "$bootSizeMiB" 100% \
   align-check optimal 2 \
   print
-sudo sgdisk \
+sgdisk \
   --disk-guid=97FD5997-D90B-4AA3-8D16-C1723AEA73C \
   --partition-guid=1:1C06F03B-704E-4657-B9CD-681A087A2FDC \
   --partition-guid=2:"$rootGPUID" \
@@ -46,10 +48,10 @@ sudo sgdisk \
 
 # Get start & length of the root partition in sectors to $START and $SECTORS.
 eval "$(partx "$diskImage" -o START,SECTORS --nr 2 --pairs)"
-sudo mkfs.ext4 -b 4096 -F -L "$label" "$diskImage" -E offset=$((START * 512)) $(((SECTORS * 512) / 1024))K
+mkfs.ext4 -b 4096 -F -L "$label" "$diskImage" -E offset=$((START * 512)) $(((SECTORS * 512) / 1024))K
 echo "$START" "$SECTORS"
 echo "copying staging root to image..."
-sudo cptofs -p -P 2 \
+cptofs -p -P 2 \
   -t ext4 \
   -i "$diskImage" \
   "$root"/* / ||
