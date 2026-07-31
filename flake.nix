@@ -13,17 +13,7 @@
         linux-nabu = pkgs.callPackage ./packages/linux-nabu { };
         alsa-ucm-conf-xiaomi-nabu = pkgs.callPackage ./packages/alsa-ucm-conf-xiaomi-nabu { };
         linux-firmware-xiaomi-nabu = pkgs.callPackage ./packages/linux-firmware-xiaomi-nabu { };
-        image = (
-          (nixpkgs.lib.nixosSystem {
-            specialArgs = { inherit flakes; };
-            modules = [
-              ./config.nix
-              ./hardware.nix
-              { nixpkgs.hostPlatform = "aarch64-linux"; }
-            ];
-          }).config.system.build.images.raw-efi
-        );
-        new-image = (import ./make-disk-image.nix) {
+        image = (import ./make-disk-image.nix) {
           inherit pkgs lib;
           memSize = 2048;
           config =
@@ -48,7 +38,6 @@
                       fsType = "vfat";
                     };
                   };
-                  # system.nixos.tags = [ "raw" ] ++ [ "efi" ];
                 }
               ];
             }).config;

@@ -6,24 +6,6 @@
   ...
 }:
 {
-  # nixpkgs.hostPlatform = lib.mkDefault "aarch64-linux";
-
-  # TODO: check it out
-  # fileSystems."/" = lib.mkForce {
-  #   device = "/dev/disk/by-label/linux";
-  #   fsType = "ext4";
-  # };
-
-  # TODO: check it out
-  # fileSystems."/boot" = lib.mkForce {
-  #   device = "/dev/disk/by-label/esp";
-  #   fsType = "vfat";
-  #   options = [
-  #     "fmask=0077"
-  #     "dmask=0077"
-  #   ];
-  # };
-
   boot = {
     # NOTE: hardware devicetree will be automatically enabled
     kernelPackages = pkgs.linuxPackagesFor flakes.self.packages.aarch64-linux.linux-nabu;
