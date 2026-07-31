@@ -30,8 +30,7 @@ make-disk-image {
     })
     config
     ;
-  installBootLoader = false;
+  installBootLoader = true;
   touchEFIVars = false;
-  copyChannel = false;
   memSize = 2048;
 }

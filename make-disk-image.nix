@@ -69,12 +69,6 @@
 
   rootFSUID ? rootGPUID,
 
-  # Whether a nix channel based on the current source tree should be
-  # made available inside the image. Useful for interactive use of nix
-  # utils, but changes the hash of the image when the sources are
-  # updated.
-  copyChannel ? true,
-
   # Additional store paths to copy to the image's store.
   additionalPaths ? [ ],
 }:
@@ -134,7 +128,10 @@ let
   users = map (x: x.user or "''") contents;
   groups = map (x: x.group or "''") contents;
 
-  basePaths = [ config.system.build.toplevel ] ++ lib.optional copyChannel channelSources;
+  basePaths = [
+    config.system.build.toplevel
+    channelSources
+  ];
 
   additionalPaths' = lib.subtractLists basePaths additionalPaths;
 
@@ -237,7 +234,7 @@ let
     echo "running nixos-install..."
     nixos-install --root $root --no-bootloader --no-root-passwd \
       --system ${config.system.build.toplevel} \
-      ${if copyChannel then "--channel ${channelSources}" else "--no-channel-copy"} \
+      --channel ${channelSources} \
       --substituters ""
 
     ${lib.optionalString (additionalPaths' != [ ]) ''
