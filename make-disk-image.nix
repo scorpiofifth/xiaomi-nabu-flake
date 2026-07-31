@@ -570,141 +570,140 @@ let
     mkdir -p $out/nix-support
     echo "file ${format}-image $out/${filename}" >> $out/nix-support/hydra-build-products
   '';
-
-  buildImage = pkgs.vmTools.runInLinuxVM (
-    pkgs.runCommand name
-      {
-        preVM = prepareImage + lib.optionalString touchEFIVars createEFIVars;
-        buildInputs = with pkgs; [
-          util-linux
-          e2fsprogs
-          dosfstools
-        ];
-        postVM = moveOrConvertImage + createHydraBuildProducts + postVM;
-        QEMU_OPTS = lib.concatStringsSep " " (
-          lib.optional useEFIBoot "-drive if=pflash,format=raw,unit=0,readonly=on,file=${efiFirmware}"
-          ++ lib.optionals touchEFIVars [
-            "-drive if=pflash,format=raw,unit=1,file=$efiVars"
-          ]
-          ++ lib.optionals (OVMF.systemManagementModeRequired or false) [
-            "-machine"
-            "q35,smm=on"
-            "-global"
-            "driver=cfi.pflash01,property=secure,value=on"
-          ]
-        );
-        inherit memSize;
-      }
-      ''
-        export PATH=${binPath}:$PATH
-
-        rootDisk=${if partitionTableType != "none" then "/dev/vda${rootPartition}" else "/dev/vda"}
-
-        # It is necessary to set root filesystem unique identifier in advance, otherwise
-        # bootloader might get the wrong one and fail to boot.
-        # At the end, we reset again because we want deterministic timestamps.
-        ${lib.optionalString (fsType == "ext4" && deterministic) ''
-          tune2fs -T now ${lib.optionalString deterministic "-U ${rootFSUID}"} -c 0 -i 0 $rootDisk
-        ''}
-        # make systemd-boot find ESP without udev
-        mkdir /dev/block
-        ln -s /dev/vda1 /dev/block/254:1
-
-        mountPoint=/mnt
-        mkdir $mountPoint
-        mount $rootDisk $mountPoint
-
-        # Create the ESP and mount it. Unlike e2fsprogs, mkfs.vfat doesn't support an
-        # '-E offset=X' option, so we can't do this outside the VM.
-        ${lib.optionalString (partitionTableType == "efi" || partitionTableType == "hybrid") ''
-          mkdir -p /mnt/boot
-          mkfs.vfat -n ESP /dev/vda1
-          mount /dev/vda1 /mnt/boot
-
-          ${lib.optionalString touchEFIVars "mount -t efivarfs efivarfs /sys/firmware/efi/efivars"}
-        ''}
-        ${lib.optionalString (partitionTableType == "efixbootldr") ''
-          mkdir -p /mnt/{boot,efi}
-          mkfs.vfat -n ESP /dev/vda1
-          mkfs.vfat -n BOOT /dev/vda2
-          mount /dev/vda1 /mnt/efi
-          mount /dev/vda2 /mnt/boot
-
-          ${lib.optionalString touchEFIVars "mount -t efivarfs efivarfs /sys/firmware/efi/efivars"}
-        ''}
-        ${lib.optionalString (partitionTableType == "legacy+boot") ''
-          mkdir -p /mnt/boot
-          mkfs.vfat -n BOOT /dev/vda1
-          mount /dev/vda1 /mnt/boot
-        ''}
-
-        # Install a configuration.nix
-        mkdir -p /mnt/etc/nixos
-        ${lib.optionalString (configFile != null) ''
-          cp ${configFile} /mnt/etc/nixos/configuration.nix
-        ''}
-
-        ${lib.optionalString installBootLoader ''
-          # In this throwaway resource, we only have /dev/vda, but the actual VM may refer to another disk for bootloader, e.g. /dev/vdb
-          # Use this option to create a symlink from vda to any arbitrary device you want.
-          ${lib.optionalString (config.boot.loader.grub.enable) (
-            lib.concatMapStringsSep " " (
-              device:
-              lib.optionalString (device != "/dev/vda") ''
-                mkdir -p "$(dirname ${device})"
-                ln -s /dev/vda ${device}
-              ''
-            ) config.boot.loader.grub.devices
-          )}
-          ${
-            let
-              limine = config.boot.loader.limine;
-            in
-            lib.optionalString (limine.enable && limine.biosSupport && limine.biosDevice != "/dev/vda") ''
-              mkdir -p "$(dirname ${limine.biosDevice})"
-              ln -s /dev/vda ${limine.biosDevice}
-            ''
-          }
-
-          # Set up core system link, bootloader (sd-boot, GRUB, uboot, etc.), etc.
-
-          # NOTE: systemd-boot-builder.py calls nix-env --list-generations which
-          # clobbers $HOME/.nix-defexpr/channels/nixos This would cause a  folder
-          # /homeless-shelter to show up in the final image which  in turn breaks
-          # nix builds in the target image if sandboxing is turned off (through
-          # __noChroot for example).
-          export HOME=$TMPDIR
-          NIXOS_INSTALL_BOOTLOADER=1 nixos-enter --root $mountPoint -- /nix/var/nix/profiles/system/bin/switch-to-configuration boot
-        ''}
-
-        # Set the ownerships of the contents. The modes are set in preVM.
-        # No globbing on targets, so no need to set -f
-        targets_=(${lib.concatStringsSep " " targets})
-        users_=(${lib.concatStringsSep " " users})
-        groups_=(${lib.concatStringsSep " " groups})
-        for ((i = 0; i < ''${#targets_[@]}; i++)); do
-          target="''${targets_[$i]}"
-          user="''${users_[$i]}"
-          group="''${groups_[$i]}"
-          if [ -n "$user$group" ]; then
-            # We have to nixos-enter since we need to use the user and group of the VM
-            nixos-enter --root $mountPoint -- chown -R "$user:$group" "$target"
-          fi
-        done
-
-        umount -R /mnt
-
-        # Make sure resize2fs works. Note that resize2fs has stricter criteria for resizing than a normal
-        # mount, so the `-c 0` and `-i 0` don't affect it. Setting it to `now` doesn't produce deterministic
-        # output, of course, but we can fix that when/if we start making images deterministic.
-        # In deterministic mode, this is fixed to 1970-01-01 (UNIX timestamp 0).
-        # This two-step approach is necessary otherwise `tune2fs` will want a fresher filesystem to perform
-        # some changes.
-        ${lib.optionalString (fsType == "ext4") ''
-          tune2fs -T now ${lib.optionalString deterministic "-U ${rootFSUID}"} -c 0 -i 0 $rootDisk
-          ${lib.optionalString deterministic "tune2fs -f -T 19700101 $rootDisk"}
-        ''}
-      ''
-  );
 in
-buildImage
+# buildImage
+pkgs.vmTools.runInLinuxVM (
+  pkgs.runCommand name
+    {
+      preVM = prepareImage + lib.optionalString touchEFIVars createEFIVars;
+      buildInputs = with pkgs; [
+        util-linux
+        e2fsprogs
+        dosfstools
+      ];
+      postVM = moveOrConvertImage + createHydraBuildProducts + postVM;
+      QEMU_OPTS = lib.concatStringsSep " " (
+        lib.optional useEFIBoot "-drive if=pflash,format=raw,unit=0,readonly=on,file=${efiFirmware}"
+        ++ lib.optionals touchEFIVars [
+          "-drive if=pflash,format=raw,unit=1,file=$efiVars"
+        ]
+        ++ lib.optionals (OVMF.systemManagementModeRequired or false) [
+          "-machine"
+          "q35,smm=on"
+          "-global"
+          "driver=cfi.pflash01,property=secure,value=on"
+        ]
+      );
+      inherit memSize;
+    }
+    ''
+      export PATH=${binPath}:$PATH
+
+      rootDisk=${if partitionTableType != "none" then "/dev/vda${rootPartition}" else "/dev/vda"}
+
+      # It is necessary to set root filesystem unique identifier in advance, otherwise
+      # bootloader might get the wrong one and fail to boot.
+      # At the end, we reset again because we want deterministic timestamps.
+      ${lib.optionalString (fsType == "ext4" && deterministic) ''
+        tune2fs -T now ${lib.optionalString deterministic "-U ${rootFSUID}"} -c 0 -i 0 $rootDisk
+      ''}
+      # make systemd-boot find ESP without udev
+      mkdir /dev/block
+      ln -s /dev/vda1 /dev/block/254:1
+
+      mountPoint=/mnt
+      mkdir $mountPoint
+      mount $rootDisk $mountPoint
+
+      # Create the ESP and mount it. Unlike e2fsprogs, mkfs.vfat doesn't support an
+      # '-E offset=X' option, so we can't do this outside the VM.
+      ${lib.optionalString (partitionTableType == "efi" || partitionTableType == "hybrid") ''
+        mkdir -p /mnt/boot
+        mkfs.vfat -n ESP /dev/vda1
+        mount /dev/vda1 /mnt/boot
+
+        ${lib.optionalString touchEFIVars "mount -t efivarfs efivarfs /sys/firmware/efi/efivars"}
+      ''}
+      ${lib.optionalString (partitionTableType == "efixbootldr") ''
+        mkdir -p /mnt/{boot,efi}
+        mkfs.vfat -n ESP /dev/vda1
+        mkfs.vfat -n BOOT /dev/vda2
+        mount /dev/vda1 /mnt/efi
+        mount /dev/vda2 /mnt/boot
+
+        ${lib.optionalString touchEFIVars "mount -t efivarfs efivarfs /sys/firmware/efi/efivars"}
+      ''}
+      ${lib.optionalString (partitionTableType == "legacy+boot") ''
+        mkdir -p /mnt/boot
+        mkfs.vfat -n BOOT /dev/vda1
+        mount /dev/vda1 /mnt/boot
+      ''}
+
+      # Install a configuration.nix
+      mkdir -p /mnt/etc/nixos
+      ${lib.optionalString (configFile != null) ''
+        cp ${configFile} /mnt/etc/nixos/configuration.nix
+      ''}
+
+      ${lib.optionalString installBootLoader ''
+        # In this throwaway resource, we only have /dev/vda, but the actual VM may refer to another disk for bootloader, e.g. /dev/vdb
+        # Use this option to create a symlink from vda to any arbitrary device you want.
+        ${lib.optionalString (config.boot.loader.grub.enable) (
+          lib.concatMapStringsSep " " (
+            device:
+            lib.optionalString (device != "/dev/vda") ''
+              mkdir -p "$(dirname ${device})"
+              ln -s /dev/vda ${device}
+            ''
+          ) config.boot.loader.grub.devices
+        )}
+        ${
+          let
+            limine = config.boot.loader.limine;
+          in
+          lib.optionalString (limine.enable && limine.biosSupport && limine.biosDevice != "/dev/vda") ''
+            mkdir -p "$(dirname ${limine.biosDevice})"
+            ln -s /dev/vda ${limine.biosDevice}
+          ''
+        }
+
+        # Set up core system link, bootloader (sd-boot, GRUB, uboot, etc.), etc.
+
+        # NOTE: systemd-boot-builder.py calls nix-env --list-generations which
+        # clobbers $HOME/.nix-defexpr/channels/nixos This would cause a  folder
+        # /homeless-shelter to show up in the final image which  in turn breaks
+        # nix builds in the target image if sandboxing is turned off (through
+        # __noChroot for example).
+        export HOME=$TMPDIR
+        NIXOS_INSTALL_BOOTLOADER=1 nixos-enter --root $mountPoint -- /nix/var/nix/profiles/system/bin/switch-to-configuration boot
+      ''}
+
+      # Set the ownerships of the contents. The modes are set in preVM.
+      # No globbing on targets, so no need to set -f
+      targets_=(${lib.concatStringsSep " " targets})
+      users_=(${lib.concatStringsSep " " users})
+      groups_=(${lib.concatStringsSep " " groups})
+      for ((i = 0; i < ''${#targets_[@]}; i++)); do
+        target="''${targets_[$i]}"
+        user="''${users_[$i]}"
+        group="''${groups_[$i]}"
+        if [ -n "$user$group" ]; then
+          # We have to nixos-enter since we need to use the user and group of the VM
+          nixos-enter --root $mountPoint -- chown -R "$user:$group" "$target"
+        fi
+      done
+
+      umount -R /mnt
+
+      # Make sure resize2fs works. Note that resize2fs has stricter criteria for resizing than a normal
+      # mount, so the `-c 0` and `-i 0` don't affect it. Setting it to `now` doesn't produce deterministic
+      # output, of course, but we can fix that when/if we start making images deterministic.
+      # In deterministic mode, this is fixed to 1970-01-01 (UNIX timestamp 0).
+      # This two-step approach is necessary otherwise `tune2fs` will want a fresher filesystem to perform
+      # some changes.
+      ${lib.optionalString (fsType == "ext4") ''
+        tune2fs -T now ${lib.optionalString deterministic "-U ${rootFSUID}"} -c 0 -i 0 $rootDisk
+        ${lib.optionalString deterministic "tune2fs -f -T 19700101 $rootDisk"}
+      ''}
+    ''
+)

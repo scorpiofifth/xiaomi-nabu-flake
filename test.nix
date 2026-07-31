@@ -25,18 +25,15 @@ make-disk-image {
             };
           };
           system.nixos.tags = [ "raw" ] ++ [ "efi" ];
-          image.extension = "img";
         }
       ];
     })
     config
     ;
   format = "raw";
-  onlyNixStore = false;
   partitionTableType = "efi";
   installBootLoader = false;
   touchEFIVars = false;
-  diskSize = "auto";
   additionalSpace = "0M";
   copyChannel = false;
   memSize = 2048;
