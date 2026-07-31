@@ -111,24 +111,6 @@ let
 
   rootPartition = "2";
 
-  partitionDiskScript = ''
-    parted --script $diskImage -- \
-      mklabel gpt \
-      mkpart ESP fat32 8MiB $bootSizeMiB \
-      set 1 boot on \
-      align-check optimal 1 \
-      mkpart primary ext4 $bootSizeMiB 100% \
-      align-check optimal 2 \
-      print
-    ${lib.optionalString deterministic ''
-      sgdisk \
-      --disk-guid=97FD5997-D90B-4AA3-8D16-C1723AEA73C \
-      --partition-guid=1:1C06F03B-704E-4657-B9CD-681A087A2FDC \
-      --partition-guid=2:${rootGPUID} \
-      $diskImage
-    ''}
-  '';
-
   useEFIBoot = touchEFIVars;
 
   nixpkgs = lib.cleanSource pkgs.path;
@@ -288,7 +270,21 @@ let
 
     truncate -s ${toString diskSize}M $diskImage
 
-    ${partitionDiskScript}
+    parted --script $diskImage -- \
+      mklabel gpt \
+      mkpart ESP fat32 8MiB $bootSizeMiB \
+      set 1 boot on \
+      align-check optimal 1 \
+      mkpart primary ext4 $bootSizeMiB 100% \
+      align-check optimal 2 \
+      print
+    ${lib.optionalString deterministic ''
+      sgdisk \
+      --disk-guid=97FD5997-D90B-4AA3-8D16-C1723AEA73C \
+      --partition-guid=1:1C06F03B-704E-4657-B9CD-681A087A2FDC \
+      --partition-guid=2:${rootGPUID} \
+      $diskImage
+    ''}
 
     # Get start & length of the root partition in sectors to $START and $SECTORS.
       eval $(partx $diskImage -o START,SECTORS --nr ${rootPartition} --pairs)
