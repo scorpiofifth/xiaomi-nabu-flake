@@ -20,7 +20,6 @@ chmod 755 "$TMPDIR"
 
 echo "running nixos-install..."
 nix-store --load-db <"${closureInfo}/registration"
-echo debugger
 nixos-install \
   --channel "$channelSources" \
   --no-bootloader \
@@ -28,7 +27,6 @@ nixos-install \
   --root "$root" \
   --substituters "" \
   --system "$configBuild"
-echo end debugger
 
 echo "creating img..."
 truncate -s "${diskSize}M" "$diskImage"
@@ -67,12 +65,12 @@ espDisk="${loDevice}p1"
 rootDisk="${loDevice}p2"
 mountPoint="$TMPDIR/mnt"
 
-mkdir -p "$mountPoint"
+sudo mkdir -p "$mountPoint"
 sudo ln -s "$espDisk" "/dev/block/254:1"
 sudo tune2fs -T now -U "$rootFSUID" -c 0 -i 0 "$rootDisk"
 echo "mounting rootDisk..."
 sudo mount "$rootDisk" "$mountPoint"
-mkdir -p "$mountPoint"/boot
+sudo mkdir -p "$mountPoint"/boot
 sudo mkfs.vfat -n ESP "$espDisk"
 echo "mounting espDisk..."
 sudo mount "$espDisk" "$mountPoint"/boot
