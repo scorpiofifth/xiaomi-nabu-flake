@@ -100,12 +100,18 @@ let
     # Get start & length of the root partition in sectors to $START and $SECTORS.
     eval $(partx $diskImage -o START,SECTORS --nr 2 --pairs)
     mkfs.ext4 -b 4096 -F -L ${label} $diskImage -E offset=$(( $START * 512 )) $(( ( $SECTORS * 512 ) / 1024 ))K
+    echo $START $SECTORS
     echo "copying staging root to image..."
-    cptofs -p -P 2 \
-           -t ext4 \
-           -i $diskImage \
-           $root/* / ||
-      (echo >&2 "ERROR: cptofs failed. diskSize might be too small for closure."; exit 1)
+    # cptofs -p -P 2 \
+    #        -t ext4 \
+    #        -i $diskImage \
+    #        $root/* / ||
+    #   (echo >&2 "ERROR: cptofs failed. diskSize might be too small for closure."; exit 1)
+    eval $(sfdisk -d $diskImage | sed -n 's/.*'"''${PART}"' :.*start= *\([0-9]*\).*size= *\([0-9]*\).*/S=\1 N=\2/p')
+    echo $S $N
+    dd if=$diskImage of="$TMPDIR/part.img" bs=512 skip=$S count=$N
+    mke2fs -t ext4 -d $root "$TMPDIR/part.img"
+    dd if="$TMPDIR/part.img" of=$diskImage bs=512 seek=$S conv=notrunc
   '';
 in
 # buildImage
@@ -147,12 +153,14 @@ pkgs.vmTools.runInLinuxVM (
       # At the end, we reset again because we want deterministic timestamps.
       tune2fs -T now -U ${rootFSUID} -c 0 -i 0 $rootDisk
 
+      echo "mounting rootDisk..."
       mount $rootDisk $mountPoint
 
       # Create the ESP and mount it. Unlike e2fsprogs, mkfs.vfat doesn't support an
       # '-E offset=X' option, so we can't do this outside the VM.
       mkdir -p $mountPoint/boot
       mkfs.vfat -n ESP $espDisk
+      echo "mounting espDisk..."
       mount $espDisk $mountPoint/boot
 
       # Install a configuration.nix
@@ -167,7 +175,9 @@ pkgs.vmTools.runInLinuxVM (
       # /homeless-shelter to show up in the final image which  in turn breaks
       # nix builds in the target image if sandboxing is turned off (through
       # __noChroot for example).
+      echo "running nixos-enter for `switch-to-configuration boot`..."
       NIXOS_INSTALL_BOOTLOADER=1 nixos-enter --root $mountPoint -- /nix/var/nix/profiles/system/bin/switch-to-configuration boot
+
       umount -R $mountPoint
 
       # Make sure resize2fs works. Note that resize2fs has stricter criteria for resizing than a normal
