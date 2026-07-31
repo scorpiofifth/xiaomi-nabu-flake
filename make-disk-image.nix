@@ -52,15 +52,6 @@
   # Disk image filename, without any extensions (e.g. `image_1`).
   baseName ? "nixos",
 
-  # Whether to fix:
-  #   - GPT Disk Unique Identifier (diskGUID)
-  #   - GPT Partition Unique Identifier: depends on the layout, root partition UUID can be controlled through `rootGPUID` option
-  #   - GPT Partition Type Identifier: fixed according to the layout, e.g. ESP partition, etc. through `parted` invocation.
-  #   - Filesystem Unique Identifier when fsType = ext4 for *root partition*.
-  # BIOS/MBR support is "best effort" at the moment.
-  # Boot partitions may not be deterministic.
-  deterministic ? true,
-
   # GPT Partition Unique Identifier for root partition.
   rootGPUID ? "F222513B-DED1-49FA-B591-20CE86A2FE7F",
 
@@ -110,9 +101,9 @@ let
       config.system.build.nixos-install
       nixos-enter
       nix
+      gptfdisk
       systemdMinimal
     ]
-    ++ lib.optional deterministic gptfdisk
     ++ stdenv.initialPath
   );
 
@@ -253,13 +244,11 @@ let
       mkpart primary ext4 $bootSizeMiB 100% \
       align-check optimal 2 \
       print
-    ${lib.optionalString deterministic ''
-      sgdisk \
+    sgdisk \
       --disk-guid=97FD5997-D90B-4AA3-8D16-C1723AEA73C \
       --partition-guid=1:1C06F03B-704E-4657-B9CD-681A087A2FDC \
       --partition-guid=2:${rootGPUID} \
       $diskImage
-    ''}
 
     # Get start & length of the root partition in sectors to $START and $SECTORS.
       eval $(partx $diskImage -o START,SECTORS --nr ${rootPartition} --pairs)
@@ -323,9 +312,7 @@ pkgs.vmTools.runInLinuxVM (
       # It is necessary to set root filesystem unique identifier in advance, otherwise
       # bootloader might get the wrong one and fail to boot.
       # At the end, we reset again because we want deterministic timestamps.
-      ${lib.optionalString deterministic ''
-        tune2fs -T now ${lib.optionalString deterministic "-U ${rootFSUID}"} -c 0 -i 0 $rootDisk
-      ''}
+      tune2fs -T now -U ${rootFSUID} -c 0 -i 0 $rootDisk
       # make systemd-boot find ESP without udev
       mkdir /dev/block
       ln -s /dev/vda1 /dev/block/254:1
@@ -402,7 +389,7 @@ pkgs.vmTools.runInLinuxVM (
       # In deterministic mode, this is fixed to 1970-01-01 (UNIX timestamp 0).
       # This two-step approach is necessary otherwise `tune2fs` will want a fresher filesystem to perform
       # some changes.
-      tune2fs -T now ${lib.optionalString deterministic "-U ${rootFSUID}"} -c 0 -i 0 $rootDisk
-      ${lib.optionalString deterministic "tune2fs -f -T 19700101 $rootDisk"}
+      tune2fs -T now -U ${rootFSUID} -c 0 -i 0 $rootDisk
+      tune2fs -f -T 19700101 $rootDisk
     ''
 )
