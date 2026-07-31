@@ -25,10 +25,9 @@
   rootFSUID ? rootGPUID,
 }:
 let
-  nixpkgs = lib.cleanSource pkgs.path;
   channelSources = pkgs.runCommand "nixos-${config.system.nixos.version}" { } ''
     mkdir -p $out
-    cp -prd ${nixpkgs.outPath} $out/nixos
+    cp -prd ${(lib.cleanSource pkgs.path).outPath} $out/nixos
     chmod -R u+w $out/nixos
     if [ ! -e $out/nixos/nixpkgs ]; then
       ln -s . $out/nixos/nixpkgs
