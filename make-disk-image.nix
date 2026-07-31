@@ -119,7 +119,7 @@ pkgs.vmTools.runInLinuxVM (
         dosfstools
       ];
       preVM = prepareImage;
-      postVM = "mv $diskImage $out/${baseName}.img ";
+      postVM = "mv $diskImage $out/${baseName}.img";
       QEMU_OPTS = lib.concatStringsSep " " (
         lib.optionals (OVMF.systemManagementModeRequired or false) [
           "-machine"
@@ -132,19 +132,21 @@ pkgs.vmTools.runInLinuxVM (
     }
     ''
       export PATH=${binPath}:$PATH
+
       espDisk="/dev/vda1"
       rootDisk="/dev/vda2"
       mountPoint=/mnt
+
+      # make systemd-boot find ESP without udev
+      mkdir /dev/block
+      ln -s $espDisk /dev/block/254:1
+      mkdir $mountPoint
 
       # It is necessary to set root filesystem unique identifier in advance, otherwise
       # bootloader might get the wrong one and fail to boot.
       # At the end, we reset again because we want deterministic timestamps.
       tune2fs -T now -U ${rootFSUID} -c 0 -i 0 $rootDisk
 
-      # make systemd-boot find ESP without udev
-      mkdir /dev/block
-      ln -s $espDisk /dev/block/254:1
-      mkdir $mountPoint
       mount $rootDisk $mountPoint
 
       # Create the ESP and mount it. Unlike e2fsprogs, mkfs.vfat doesn't support an
