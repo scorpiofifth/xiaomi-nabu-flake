@@ -107,7 +107,7 @@
   # The size of the disk, in MiB (1024*1024 bytes).
   # if "auto" size is calculated based on the contents copied to it and
   #   additionalSpace is taken into account.
-  diskSize ? "auto",
+  diskSize ? "4096",
 
   # additional disk space to be added to the image if diskSize "auto"
   # is used
@@ -530,83 +530,7 @@ let
     bootSize=$(round_to_nearest $(numfmt --from=iec '${bootSize}') $mebibyte)
     bootSizeMiB=$(( bootSize / 1024 / 1024 ))MiB
 
-    ${
-      if diskSize == "auto" then
-        ''
-          ${
-            if
-              partitionTableType == "efi" || partitionTableType == "efixbootldr" || partitionTableType == "hybrid"
-            then
-              ''
-                # Add the GPT at the end
-                gptSpace=$(( 512 * 34 * 1 ))
-                # Normally we'd need to account for alignment and things, if bootSize
-                # represented the actual size of the boot partition. But it instead
-                # represents the offset at which it ends.
-                # So we know bootSize is the reserved space in front of the partition.
-                reservedSpace=$(( gptSpace + bootSize ))
-              ''
-            else if partitionTableType == "legacy+gpt" then
-              ''
-                # Add the GPT at the end
-                gptSpace=$(( 512 * 34 * 1 ))
-                # And include the bios_grub partition; the ext4 partition starts at 2MiB exactly.
-                reservedSpace=$(( gptSpace + 2 * mebibyte ))
-              ''
-            else if partitionTableType == "legacy" then
-              ''
-                # Add the 1MiB aligned reserved space (includes MBR)
-                reservedSpace=$(( mebibyte ))
-              ''
-            else if partitionTableType == "legacy+boot" then
-              ''
-                # The explanation from the above "efi" case applies here too,
-                # but gptSpace is not needed without a GPT.
-                reservedSpace=$(( bootSize ))
-              ''
-            else
-              ''
-                reservedSpace=0
-              ''
-          }
-          additionalSpace=$(( $(numfmt --from=iec '${additionalSpace}') + reservedSpace ))
-
-          # Compute required space in filesystem blocks
-          diskUsage=$(find . ! -type d -print0 | du --files0-from=- --apparent-size --count-links --block-size "${blockSize}" | cut -f1 | sum_lines)
-          # Each inode takes space!
-          numInodes=$(find . | wc -l)
-          # Convert to bytes, inodes take two blocks each!
-          diskUsage=$(( (diskUsage + 2 * numInodes) * ${blockSize} ))
-          # Then increase the required space to account for the reserved blocks.
-          fudge=$(compute_fudge $diskUsage)
-          requiredFilesystemSpace=$(( diskUsage + fudge ))
-
-          # Round up to the nearest block size.
-          # This ensures whole $blockSize bytes block sizes in the filesystem
-          # and helps towards aligning partitions optimally.
-          requiredFilesystemSpace=$(round_to_nearest $requiredFilesystemSpace ${blockSize})
-
-          diskSize=$(( requiredFilesystemSpace + additionalSpace ))
-
-          # Round up to the nearest mebibyte.
-          # This ensures whole 512 bytes sector sizes in the disk image
-          # and helps towards aligning partitions optimally.
-          diskSize=$(round_to_nearest $diskSize $mebibyte)
-
-          truncate -s "$diskSize" $diskImage
-
-          printf "Automatic disk size...\n"
-          printf "  Closure space use: %d bytes\n" $diskUsage
-          printf "  fudge: %d bytes\n" $fudge
-          printf "  Filesystem size needed: %d bytes\n" $requiredFilesystemSpace
-          printf "  Additional space: %d bytes\n" $additionalSpace
-          printf "  Disk image size: %d bytes\n" $diskSize
-        ''
-      else
-        ''
-          truncate -s ${toString diskSize}M $diskImage
-        ''
-    }
+    truncate -s ${toString diskSize}M $diskImage
 
     ${partitionDiskScript}
 
