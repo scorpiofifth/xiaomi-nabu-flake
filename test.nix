@@ -30,7 +30,6 @@ make-disk-image {
     })
     config
     ;
-  installBootLoader = true;
   touchEFIVars = false;
   memSize = 2048;
 }

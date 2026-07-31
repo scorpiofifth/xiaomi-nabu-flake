@@ -22,9 +22,6 @@
   # When setting one of `user' or `group', the other needs to be set too.
   contents ? [ ],
 
-  # Whether to invoke `switch-to-configuration boot` during image creation
-  installBootLoader ? true,
-
   # Whether to output have EFIVARS available in $out/efi-vars.fd and use it during disk creation
   touchEFIVars ? false,
 
@@ -351,38 +348,36 @@ pkgs.vmTools.runInLinuxVM (
         cp ${configFile} /mnt/etc/nixos/configuration.nix
       ''}
 
-      ${lib.optionalString installBootLoader ''
-        # In this throwaway resource, we only have /dev/vda, but the actual VM may refer to another disk for bootloader, e.g. /dev/vdb
-        # Use this option to create a symlink from vda to any arbitrary device you want.
-        ${lib.optionalString (config.boot.loader.grub.enable) (
-          lib.concatMapStringsSep " " (
-            device:
-            lib.optionalString (device != "/dev/vda") ''
-              mkdir -p "$(dirname ${device})"
-              ln -s /dev/vda ${device}
-            ''
-          ) config.boot.loader.grub.devices
-        )}
-        ${
-          let
-            limine = config.boot.loader.limine;
-          in
-          lib.optionalString (limine.enable && limine.biosSupport && limine.biosDevice != "/dev/vda") ''
-            mkdir -p "$(dirname ${limine.biosDevice})"
-            ln -s /dev/vda ${limine.biosDevice}
+      # In this throwaway resource, we only have /dev/vda, but the actual VM may refer to another disk for bootloader, e.g. /dev/vdb
+      # Use this option to create a symlink from vda to any arbitrary device you want.
+      ${lib.optionalString (config.boot.loader.grub.enable) (
+        lib.concatMapStringsSep " " (
+          device:
+          lib.optionalString (device != "/dev/vda") ''
+            mkdir -p "$(dirname ${device})"
+            ln -s /dev/vda ${device}
           ''
-        }
+        ) config.boot.loader.grub.devices
+      )}
+      ${
+        let
+          limine = config.boot.loader.limine;
+        in
+        lib.optionalString (limine.enable && limine.biosSupport && limine.biosDevice != "/dev/vda") ''
+          mkdir -p "$(dirname ${limine.biosDevice})"
+          ln -s /dev/vda ${limine.biosDevice}
+        ''
+      }
 
-        # Set up core system link, bootloader (sd-boot, GRUB, uboot, etc.), etc.
+      # Set up core system link, bootloader (sd-boot, GRUB, uboot, etc.), etc.
 
-        # NOTE: systemd-boot-builder.py calls nix-env --list-generations which
-        # clobbers $HOME/.nix-defexpr/channels/nixos This would cause a  folder
-        # /homeless-shelter to show up in the final image which  in turn breaks
-        # nix builds in the target image if sandboxing is turned off (through
-        # __noChroot for example).
-        export HOME=$TMPDIR
-        NIXOS_INSTALL_BOOTLOADER=1 nixos-enter --root $mountPoint -- /nix/var/nix/profiles/system/bin/switch-to-configuration boot
-      ''}
+      # NOTE: systemd-boot-builder.py calls nix-env --list-generations which
+      # clobbers $HOME/.nix-defexpr/channels/nixos This would cause a  folder
+      # /homeless-shelter to show up in the final image which  in turn breaks
+      # nix builds in the target image if sandboxing is turned off (through
+      # __noChroot for example).
+      export HOME=$TMPDIR
+      NIXOS_INSTALL_BOOTLOADER=1 nixos-enter --root $mountPoint -- /nix/var/nix/profiles/system/bin/switch-to-configuration boot
 
       # Set the ownerships of the contents. The modes are set in preVM.
       # No globbing on targets, so no need to set -f
