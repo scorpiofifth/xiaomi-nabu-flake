@@ -12,16 +12,6 @@
   # the end of the partition. Generally it will be 1MiB smaller.
   bootSize ? "256M",
 
-  # The files and directories to be placed in the target file system.
-  # This is a list of attribute sets {source, target, mode, user, group} where
-  # `source' is the file system object (regular file or directory) to be
-  # grafted in the file system at path `target', `mode' is a string containing
-  # the permissions that will be set (ex. "755"), `user' and `group' are the
-  # user and group name that will be set as owner of the files.
-  # `mode', `user', and `group' are optional.
-  # When setting one of `user' or `group', the other needs to be set too.
-  contents ? [ ],
-
   # OVMF firmware derivation
   OVMF ? pkgs.OVMF.fd,
 
@@ -50,13 +40,6 @@
 }:
 
 # We use -E offset=X below, which is only supported by e2fsprogs
-# Either both or none of {user,group} need to be set
-assert (
-  lib.assertMsg (lib.all (
-    attrs: ((attrs.user or null) == null) == ((attrs.group or null) == null)
-  ) contents) "Contents of the disk image should set none of {user, group} or both at the same time."
-);
-
 let
   nixpkgs = lib.cleanSource pkgs.path;
 
@@ -75,7 +58,6 @@ let
   binPath = lib.makeBinPath (
     with pkgs;
     [
-      rsync
       util-linux
       parted
       e2fsprogs
@@ -88,15 +70,6 @@ let
     ]
     ++ stdenv.initialPath
   );
-
-  # I'm preserving the line below because I'm going to search for it across nixpkgs to consolidate
-  # image building logic. The comment right below this now appears in 4 different places in nixpkgs :)
-  # !!! should use XML.
-  sources = map (x: x.source) contents;
-  targets = map (x: x.target) contents;
-  modes = map (x: x.mode or "''") contents;
-  users = map (x: x.user or "''") contents;
-  groups = map (x: x.group or "''") contents;
 
   basePaths = [
     config.system.build.toplevel
@@ -122,50 +95,6 @@ let
 
     root="$PWD/root"
     mkdir -p $root
-
-    # Copy arbitrary other files into the image
-    # Semi-shamelessly copied from make-etc.sh.
-    set -f
-    sources_=(${lib.concatStringsSep " " sources})
-    targets_=(${lib.concatStringsSep " " targets})
-    modes_=(${lib.concatStringsSep " " modes})
-    set +f
-
-    for ((i = 0; i < ''${#targets_[@]}; i++)); do
-      source="''${sources_[$i]}"
-      target="''${targets_[$i]}"
-      mode="''${modes_[$i]}"
-
-      if [ -n "$mode" ]; then
-        rsync_chmod_flags="--chmod=$mode"
-      else
-        rsync_chmod_flags=""
-      fi
-      # Unfortunately cptofs only supports modes, not ownership, so we can't use
-      # rsync's --chown option. Instead, we change the ownerships in the
-      # VM script with chown.
-      rsync_flags="-a --no-o --no-g $rsync_chmod_flags"
-      if [[ "$source" =~ '*' ]]; then
-        # If the source name contains '*', perform globbing.
-        mkdir -p $root/$target
-        for fn in $source; do
-          rsync $rsync_flags "$fn" $root/$target/
-        done
-      else
-        mkdir -p $root/$(dirname $target)
-        if [ -e $root/$target ]; then
-          echo "duplicate entry $target -> $source"
-          exit 1
-        elif [ -d $source ]; then
-          # Append a slash to the end of source to get rsync to copy the
-          # directory _to_ the target instead of _inside_ the target.
-          # (See `man rsync`'s note on a trailing slash.)
-          rsync $rsync_flags $source/ $root/$target
-        else
-          rsync $rsync_flags $source $root/$target
-        fi
-      fi
-    done
 
     export HOME=$TMPDIR
 
@@ -302,21 +231,6 @@ pkgs.vmTools.runInLinuxVM (
       # __noChroot for example).
       export HOME=$TMPDIR
       NIXOS_INSTALL_BOOTLOADER=1 nixos-enter --root $mountPoint -- /nix/var/nix/profiles/system/bin/switch-to-configuration boot
-
-      # Set the ownerships of the contents. The modes are set in preVM.
-      # No globbing on targets, so no need to set -f
-      targets_=(${lib.concatStringsSep " " targets})
-      users_=(${lib.concatStringsSep " " users})
-      groups_=(${lib.concatStringsSep " " groups})
-      for ((i = 0; i < ''${#targets_[@]}; i++)); do
-        target="''${targets_[$i]}"
-        user="''${users_[$i]}"
-        group="''${groups_[$i]}"
-        if [ -n "$user$group" ]; then
-          # We have to nixos-enter since we need to use the user and group of the VM
-          nixos-enter --root $mountPoint -- chown -R "$user:$group" "$target"
-        fi
-      done
 
       umount -R $mountPoint
 
