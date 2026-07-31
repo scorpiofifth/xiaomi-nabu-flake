@@ -30,7 +30,6 @@ make-disk-image {
     })
     config
     ;
-  format = "raw";
   installBootLoader = false;
   touchEFIVars = false;
   copyChannel = false;

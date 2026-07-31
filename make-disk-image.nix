@@ -52,9 +52,6 @@
 
   name ? "nixos-disk-image",
 
-  # Disk image format, one of qcow2, qcow2-compressed, vdi, vpc, raw.
-  format ? "raw",
-
   # Disk image filename, without any extensions (e.g. `image_1`).
   baseName ? "nixos",
 
@@ -91,23 +88,7 @@ assert (
 );
 
 let
-  format' = format;
-in
-let
-
-  format = if format' == "qcow2-compressed" then "qcow2" else format';
-
-  compress = lib.optionalString (format' == "qcow2-compressed") "-c";
-
-  filename =
-    "${baseName}."
-    + {
-      qcow2 = "qcow2";
-      vdi = "vdi";
-      vpc = "vhd";
-      raw = "img";
-    }
-    .${format} or format;
+  filename = "${baseName}.img";
 
   rootPartition = "2";
 
@@ -299,17 +280,8 @@ let
       (echo >&2 "ERROR: cptofs failed. diskSize might be too small for closure."; exit 1)
   '';
 
-  moveOrConvertImage = ''
-    ${
-      if format == "raw" then
-        ''
-          mv $diskImage $out/${filename}
-        ''
-      else
-        ''
-          ${pkgs.qemu-utils}/bin/qemu-img convert -f raw -O ${format} ${compress} $diskImage $out/${filename}
-        ''
-    }
+  moveImage = ''
+    mv $diskImage $out/${filename}
     diskImage=$out/${filename}
   '';
 
@@ -321,7 +293,7 @@ let
 
   createHydraBuildProducts = ''
     mkdir -p $out/nix-support
-    echo "file ${format}-image $out/${filename}" >> $out/nix-support/hydra-build-products
+    echo "file raw-image $out/${filename}" >> $out/nix-support/hydra-build-products
   '';
 in
 # buildImage
@@ -334,7 +306,7 @@ pkgs.vmTools.runInLinuxVM (
         e2fsprogs
         dosfstools
       ];
-      postVM = moveOrConvertImage + createHydraBuildProducts + postVM;
+      postVM = moveImage + createHydraBuildProducts + postVM;
       QEMU_OPTS = lib.concatStringsSep " " (
         lib.optional useEFIBoot "-drive if=pflash,format=raw,unit=0,readonly=on,file=${efiFirmware}"
         ++ lib.optionals touchEFIVars [
