@@ -30,6 +30,5 @@ make-disk-image {
     })
     config
     ;
-  touchEFIVars = false;
   memSize = 2048;
 }

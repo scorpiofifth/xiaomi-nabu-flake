@@ -22,17 +22,8 @@
   # When setting one of `user' or `group', the other needs to be set too.
   contents ? [ ],
 
-  # Whether to output have EFIVARS available in $out/efi-vars.fd and use it during disk creation
-  touchEFIVars ? false,
-
   # OVMF firmware derivation
   OVMF ? pkgs.OVMF.fd,
-
-  # EFI firmware
-  efiFirmware ? OVMF.firmware,
-
-  # EFI variables
-  efiVariables ? OVMF.variables,
 
   # Filesystem label
   label ? "nixos",
@@ -70,8 +61,6 @@ assert (
 );
 
 let
-  useEFIBoot = touchEFIVars;
-
   nixpkgs = lib.cleanSource pkgs.path;
 
   # FIXME: merge with channel.nix / make-channel.nix.
@@ -247,7 +236,7 @@ let
       $diskImage
 
     # Get start & length of the root partition in sectors to $START and $SECTORS.
-      eval $(partx $diskImage -o START,SECTORS --nr 2 --pairs)
+    eval $(partx $diskImage -o START,SECTORS --nr 2 --pairs)
 
     mkfs.ext4 -b ${blockSize} -F -L ${label} $diskImage -E offset=$(sectorsToBytes $START) $(sectorsToKilobytes $SECTORS)K
 
@@ -264,12 +253,6 @@ let
     diskImage=$out/${baseName}.img
   '';
 
-  createEFIVars = ''
-    efiVars=$out/efi-vars.fd
-    cp ${efiVariables} $efiVars
-    chmod 0644 $efiVars
-  '';
-
   createHydraBuildProducts = ''
     mkdir -p $out/nix-support
     echo "file raw-image $out/${baseName}.img" >> $out/nix-support/hydra-build-products
@@ -279,7 +262,7 @@ in
 pkgs.vmTools.runInLinuxVM (
   pkgs.runCommand name
     {
-      preVM = prepareImage + lib.optionalString touchEFIVars createEFIVars;
+      preVM = prepareImage;
       buildInputs = with pkgs; [
         util-linux
         e2fsprogs
@@ -287,11 +270,7 @@ pkgs.vmTools.runInLinuxVM (
       ];
       postVM = moveImage + createHydraBuildProducts + postVM;
       QEMU_OPTS = lib.concatStringsSep " " (
-        lib.optional useEFIBoot "-drive if=pflash,format=raw,unit=0,readonly=on,file=${efiFirmware}"
-        ++ lib.optionals touchEFIVars [
-          "-drive if=pflash,format=raw,unit=1,file=$efiVars"
-        ]
-        ++ lib.optionals (OVMF.systemManagementModeRequired or false) [
+        lib.optionals (OVMF.systemManagementModeRequired or false) [
           "-machine"
           "q35,smm=on"
           "-global"
@@ -322,8 +301,6 @@ pkgs.vmTools.runInLinuxVM (
       mkdir -p /mnt/boot
       mkfs.vfat -n ESP /dev/vda1
       mount /dev/vda1 /mnt/boot
-
-      ${lib.optionalString touchEFIVars "mount -t efivarfs efivarfs /sys/firmware/efi/efivars"}
 
       # Install a configuration.nix
       mkdir -p /mnt/etc/nixos
