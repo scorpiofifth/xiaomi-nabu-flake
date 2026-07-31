@@ -112,8 +112,6 @@ let
     rootPaths = basePaths ++ additionalPaths';
   };
 
-  blockSize = toString (4 * 1024); # ext4fs block size (not block device sector size)
-
   prepareImage = ''
     export PATH=${binPath}
 
@@ -238,7 +236,7 @@ let
     # Get start & length of the root partition in sectors to $START and $SECTORS.
     eval $(partx $diskImage -o START,SECTORS --nr 2 --pairs)
 
-    mkfs.ext4 -b ${blockSize} -F -L ${label} $diskImage -E offset=$(sectorsToBytes $START) $(sectorsToKilobytes $SECTORS)K
+    mkfs.ext4 -b 4096 -F -L ${label} $diskImage -E offset=$(sectorsToBytes $START) $(sectorsToKilobytes $SECTORS)K
 
     echo "copying staging root to image..."
     cptofs -p -P 2 \
@@ -277,30 +275,32 @@ pkgs.vmTools.runInLinuxVM (
     ''
       export PATH=${binPath}:$PATH
 
+      espDisk="/dev/vda1"
       rootDisk="/dev/vda2"
+      mountPoint=/mnt
 
       # It is necessary to set root filesystem unique identifier in advance, otherwise
       # bootloader might get the wrong one and fail to boot.
       # At the end, we reset again because we want deterministic timestamps.
       tune2fs -T now -U ${rootFSUID} -c 0 -i 0 $rootDisk
+
       # make systemd-boot find ESP without udev
       mkdir /dev/block
-      ln -s /dev/vda1 /dev/block/254:1
+      ln -s $espDisk /dev/block/254:1
 
-      mountPoint=/mnt
       mkdir $mountPoint
       mount $rootDisk $mountPoint
 
       # Create the ESP and mount it. Unlike e2fsprogs, mkfs.vfat doesn't support an
       # '-E offset=X' option, so we can't do this outside the VM.
-      mkdir -p /mnt/boot
-      mkfs.vfat -n ESP /dev/vda1
-      mount /dev/vda1 /mnt/boot
+      mkdir -p $mountPoint/boot
+      mkfs.vfat -n ESP $espDisk
+      mount $espDisk $mountPoint/boot
 
       # Install a configuration.nix
-      mkdir -p /mnt/etc/nixos
+      mkdir -p $mountPoint/etc/nixos
       ${lib.optionalString (configFile != null) ''
-        cp ${configFile} /mnt/etc/nixos/configuration.nix
+        cp ${configFile} $mountPoint/etc/nixos/configuration.nix
       ''}
 
       # In this throwaway resource, we only have /dev/vda, but the actual VM may refer to another disk for bootloader, e.g. /dev/vdb
@@ -351,7 +351,7 @@ pkgs.vmTools.runInLinuxVM (
         fi
       done
 
-      umount -R /mnt
+      umount -R $mountPoint
 
       # Make sure resize2fs works. Note that resize2fs has stricter criteria for resizing than a normal
       # mount, so the `-c 0` and `-i 0` don't affect it. Setting it to `now` doesn't produce deterministic
