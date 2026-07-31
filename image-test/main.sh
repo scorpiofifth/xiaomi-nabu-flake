@@ -76,7 +76,7 @@ echo "mounting espDisk..."
 sudo mount "$espDisk" "$mountPoint"/boot
 
 echo "running nixos-enter for 'switch-to-configuration boot'..."
-NIXOS_INSTALL_BOOTLOADER=1 sudo nix run nixpkgs#nixos-enter \
+NIXOS_INSTALL_BOOTLOADER=1 sudo "$(which nixos-enter)" \
   --root "$mountPoint" \
   -- /nix/var/nix/profiles/system/bin/switch-to-configuration boot
 
