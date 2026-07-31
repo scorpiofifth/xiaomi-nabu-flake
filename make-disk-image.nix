@@ -37,11 +37,8 @@
   # EFI variables
   efiVariables ? OVMF.variables,
 
-  # The root file system type.
-  fsType ? "ext4",
-
   # Filesystem label
-  label ? "ixos",
+  label ? "nixos",
 
   # The initial NixOS configuration file to be copied to
   # /etc/nixos/configuration.nix.
@@ -68,14 +65,12 @@
   #   - Filesystem Unique Identifier when fsType = ext4 for *root partition*.
   # BIOS/MBR support is "best effort" at the moment.
   # Boot partitions may not be deterministic.
-  # Also, to fix last time checked of the ext4 partition if fsType = ext4.
   deterministic ? true,
 
   # GPT Partition Unique Identifier for root partition.
   rootGPUID ? "F222513B-DED1-49FA-B591-20CE86A2FE7F",
-  # When fsType = ext4, this is the root Filesystem Unique Identifier.
-  # TODO: support other filesystems someday.
-  rootFSUID ? (if fsType == "ext4" then rootGPUID else null),
+
+  rootFSUID ? rootGPUID,
 
   # Whether a nix channel based on the current source tree should be
   # made available inside the image. Useful for interactive use of nix
@@ -87,10 +82,6 @@
   additionalPaths ? [ ],
 }:
 
-assert (
-  lib.assertMsg (fsType == "ext4" && deterministic -> rootFSUID != null)
-    "In deterministic mode with a ext4 partition, rootFSUID must be non-null, by default, it is equal to rootGPUID."
-);
 # We use -E offset=X below, which is only supported by e2fsprogs
 # Either both or none of {user,group} need to be set
 assert (
@@ -302,11 +293,11 @@ let
     # Get start & length of the root partition in sectors to $START and $SECTORS.
       eval $(partx $diskImage -o START,SECTORS --nr ${rootPartition} --pairs)
 
-    mkfs.${fsType} -b ${blockSize} -F -L ${label} $diskImage -E offset=$(sectorsToBytes $START) $(sectorsToKilobytes $SECTORS)K
+    mkfs.ext4 -b ${blockSize} -F -L ${label} $diskImage -E offset=$(sectorsToBytes $START) $(sectorsToKilobytes $SECTORS)K
 
     echo "copying staging root to image..."
     cptofs -p "-P ${rootPartition}" \
-           -t ${fsType} \
+           -t ext4 \
            -i $diskImage \
            $root/* / ||
       (echo >&2 "ERROR: cptofs failed. diskSize might be too small for closure."; exit 1)
@@ -370,7 +361,7 @@ pkgs.vmTools.runInLinuxVM (
       # It is necessary to set root filesystem unique identifier in advance, otherwise
       # bootloader might get the wrong one and fail to boot.
       # At the end, we reset again because we want deterministic timestamps.
-      ${lib.optionalString (fsType == "ext4" && deterministic) ''
+      ${lib.optionalString deterministic ''
         tune2fs -T now ${lib.optionalString deterministic "-U ${rootFSUID}"} -c 0 -i 0 $rootDisk
       ''}
       # make systemd-boot find ESP without udev
@@ -451,9 +442,7 @@ pkgs.vmTools.runInLinuxVM (
       # In deterministic mode, this is fixed to 1970-01-01 (UNIX timestamp 0).
       # This two-step approach is necessary otherwise `tune2fs` will want a fresher filesystem to perform
       # some changes.
-      ${lib.optionalString (fsType == "ext4") ''
-        tune2fs -T now ${lib.optionalString deterministic "-U ${rootFSUID}"} -c 0 -i 0 $rootDisk
-        ${lib.optionalString deterministic "tune2fs -f -T 19700101 $rootDisk"}
-      ''}
+      tune2fs -T now ${lib.optionalString deterministic "-U ${rootFSUID}"} -c 0 -i 0 $rootDisk
+      ${lib.optionalString deterministic "tune2fs -f -T 19700101 $rootDisk"}
     ''
 )
