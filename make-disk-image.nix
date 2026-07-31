@@ -4,37 +4,25 @@
 
   # The NixOS configuration to be installed onto the disk image.
   config,
-
   # The size of the disk, in MiB (1024*1024 bytes).
   diskSize ? "4096",
-
   # This will be undersized slightly, as this is actually the offset of
   # the end of the partition. Generally it will be 1MiB smaller.
   bootSize ? "256M",
-
   # OVMF firmware derivation
   OVMF ? pkgs.OVMF.fd,
-
   # Filesystem label
   label ? "nixos",
-
   # The initial NixOS configuration file to be copied to
   # /etc/nixos/configuration.nix.
   configFile ? null,
-
   # Guest memory size in MiB (1024*1024 bytes)
   memSize ? 1024,
-
-  name ? "nixos-disk-image",
-
   # Disk image filename, without any extensions (e.g. `image_1`).
   baseName ? "nixos",
-
   # GPT Partition Unique Identifier for root partition.
   rootGPUID ? "F222513B-DED1-49FA-B591-20CE86A2FE7F",
-
   rootFSUID ? rootGPUID,
-
   # Additional store paths to copy to the image's store.
   additionalPaths ? [ ],
 }:
@@ -42,7 +30,6 @@
 # We use -E offset=X below, which is only supported by e2fsprogs
 let
   nixpkgs = lib.cleanSource pkgs.path;
-
   # FIXME: merge with channel.nix / make-channel.nix.
   channelSources = pkgs.runCommand "nixos-${config.system.nixos.version}" { } ''
     mkdir -p $out
@@ -75,7 +62,6 @@ let
     config.system.build.toplevel
     channelSources
   ];
-
   additionalPaths' = lib.subtractLists basePaths additionalPaths;
 
   closureInfo = pkgs.closureInfo {
@@ -90,18 +76,14 @@ let
     round_to_nearest() {
       echo $(( ( $1 / $2 + 1) * $2 ))
     }
-
     mkdir $out
-
     root="$PWD/root"
     mkdir -p $root
-
     export HOME=$TMPDIR
 
     # Provide a Nix database so that nixos-install can copy closures.
     export NIX_STATE_DIR=$TMPDIR/state
     nix-store --load-db < ${closureInfo}/registration
-
     chmod 755 "$TMPDIR"
     echo "running nixos-install..."
     nixos-install --root $root --no-bootloader --no-root-passwd \
@@ -112,14 +94,10 @@ let
     ${lib.optionalString (additionalPaths' != [ ]) ''
       nix --extra-experimental-features nix-command copy --to $root --no-check-sigs ${lib.concatStringsSep " " additionalPaths'}
     ''}
-
     diskImage=nixos.raw
-
     bootSize=$(round_to_nearest $(numfmt --from=iec '${bootSize}') $mebibyte)
     bootSizeMiB=$(( bootSize / 1024 / 1024 ))MiB
-
     truncate -s ${toString diskSize}M $diskImage
-
     parted --script $diskImage -- \
       mklabel gpt \
       mkpart ESP fat32 8MiB $bootSizeMiB \
@@ -136,9 +114,7 @@ let
 
     # Get start & length of the root partition in sectors to $START and $SECTORS.
     eval $(partx $diskImage -o START,SECTORS --nr 2 --pairs)
-
     mkfs.ext4 -b 4096 -F -L ${label} $diskImage -E offset=$(( $START * 512 )) $(( ( $SECTORS * 512 ) / 1024 ))K
-
     echo "copying staging root to image..."
     cptofs -p -P 2 \
            -t ext4 \
@@ -149,7 +125,7 @@ let
 in
 # buildImage
 pkgs.vmTools.runInLinuxVM (
-  pkgs.runCommand name
+  pkgs.runCommand "nixos-disk-image"
     {
       buildInputs = with pkgs; [
         util-linux
@@ -170,7 +146,6 @@ pkgs.vmTools.runInLinuxVM (
     }
     ''
       export PATH=${binPath}:$PATH
-
       espDisk="/dev/vda1"
       rootDisk="/dev/vda2"
       mountPoint=/mnt
@@ -183,7 +158,6 @@ pkgs.vmTools.runInLinuxVM (
       # make systemd-boot find ESP without udev
       mkdir /dev/block
       ln -s $espDisk /dev/block/254:1
-
       mkdir $mountPoint
       mount $rootDisk $mountPoint
 
@@ -223,7 +197,6 @@ pkgs.vmTools.runInLinuxVM (
       }
 
       # Set up core system link, bootloader (sd-boot, GRUB, uboot, etc.), etc.
-
       # NOTE: systemd-boot-builder.py calls nix-env --list-generations which
       # clobbers $HOME/.nix-defexpr/channels/nixos This would cause a  folder
       # /homeless-shelter to show up in the final image which  in turn breaks
@@ -231,7 +204,6 @@ pkgs.vmTools.runInLinuxVM (
       # __noChroot for example).
       export HOME=$TMPDIR
       NIXOS_INSTALL_BOOTLOADER=1 nixos-enter --root $mountPoint -- /nix/var/nix/profiles/system/bin/switch-to-configuration boot
-
       umount -R $mountPoint
 
       # Make sure resize2fs works. Note that resize2fs has stricter criteria for resizing than a normal
