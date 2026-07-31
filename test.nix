@@ -31,10 +31,8 @@ make-disk-image {
     config
     ;
   format = "raw";
-  partitionTableType = "efi";
   installBootLoader = false;
   touchEFIVars = false;
-  additionalSpace = "0M";
   copyChannel = false;
   memSize = 2048;
 }
