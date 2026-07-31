@@ -15,4 +15,12 @@ jobs:
         run: chmod o+rx /home/runner
       - name: Build
         run: |
-          nix develop --system aarch64-linux -L -c bash ./image-test/main.sh
+          nix develop --system aarch64-linux -L -c bash ./image-builder/main.sh
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: nixos-image
+          path: |
+            outputs/nixos.img
+          retention-days: 90
+          compression-level: 5

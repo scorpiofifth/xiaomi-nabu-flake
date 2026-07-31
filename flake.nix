@@ -8,14 +8,14 @@
       lib = pkgs.lib;
     in
     {
-      devShells.aarch64-linux.default = import ./image-test/shell.nix {
+      devShells.aarch64-linux.default = import ./image-buider/shell.nix {
         inherit pkgs lib;
         config =
           (nixpkgs.lib.nixosSystem {
             specialArgs = { inherit flakes; };
             modules = [
               ./config.nix
-              # ./hardware.nix
+              ./hardware.nix
               { nixpkgs.hostPlatform = "aarch64-linux"; }
               {
                 # this is `raw-efi` config from `nixos/modules/image/images`
