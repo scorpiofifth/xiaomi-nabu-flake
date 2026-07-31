@@ -51,14 +51,6 @@ let
     ]
     ++ stdenv.initialPath
   );
-  basePaths = [
-    config.system.build.toplevel
-    channelSources
-  ];
-  closureInfo = pkgs.closureInfo {
-    rootPaths = basePaths;
-  };
-
   prepareImage = ''
     export PATH=${binPath}
 
@@ -74,7 +66,14 @@ let
 
     # Provide a Nix database so that nixos-install can copy closures.
     export NIX_STATE_DIR=$TMPDIR/state
-    nix-store --load-db < ${closureInfo}/registration
+    nix-store --load-db < ${
+      pkgs.closureInfo {
+        rootPaths = [
+          config.system.build.toplevel
+          channelSources
+        ];
+      }
+    }/registration
     chmod 755 "$TMPDIR"
     echo "running nixos-install..."
     nixos-install --root $root --no-bootloader --no-root-passwd \
