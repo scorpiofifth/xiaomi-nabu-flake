@@ -23,14 +23,9 @@
   # GPT Partition Unique Identifier for root partition.
   rootGPUID ? "F222513B-DED1-49FA-B591-20CE86A2FE7F",
   rootFSUID ? rootGPUID,
-  # Additional store paths to copy to the image's store.
-  additionalPaths ? [ ],
 }:
-
-# We use -E offset=X below, which is only supported by e2fsprogs
 let
   nixpkgs = lib.cleanSource pkgs.path;
-  # FIXME: merge with channel.nix / make-channel.nix.
   channelSources = pkgs.runCommand "nixos-${config.system.nixos.version}" { } ''
     mkdir -p $out
     cp -prd ${nixpkgs.outPath} $out/nixos
@@ -41,7 +36,6 @@ let
     rm -rf $out/nixos/.git
     echo -n ${config.system.nixos.versionSuffix} > $out/nixos/.version-suffix
   '';
-
   binPath = lib.makeBinPath (
     with pkgs;
     [
@@ -57,15 +51,12 @@ let
     ]
     ++ stdenv.initialPath
   );
-
   basePaths = [
     config.system.build.toplevel
     channelSources
   ];
-  additionalPaths' = lib.subtractLists basePaths additionalPaths;
-
   closureInfo = pkgs.closureInfo {
-    rootPaths = basePaths ++ additionalPaths';
+    rootPaths = basePaths;
   };
 
   prepareImage = ''
@@ -90,10 +81,6 @@ let
       --system ${config.system.build.toplevel} \
       --channel ${channelSources} \
       --substituters ""
-
-    ${lib.optionalString (additionalPaths' != [ ]) ''
-      nix --extra-experimental-features nix-command copy --to $root --no-check-sigs ${lib.concatStringsSep " " additionalPaths'}
-    ''}
     diskImage=nixos.raw
     bootSize=$(round_to_nearest $(numfmt --from=iec '${bootSize}') $mebibyte)
     bootSizeMiB=$(( bootSize / 1024 / 1024 ))MiB
