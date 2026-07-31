@@ -87,23 +87,33 @@ pkgs.runCommand "nixos-disk-image" { } ''
     --channel ${channelSources} \
     --substituters ""
 
-  echo "creating diskImage..."
+  echo "creating img..."
   truncate -s ${toString diskSize}M $diskImage
-  parted --script $diskImage -- \
-    mklabel gpt \
-    mkpart ESP fat32 8MiB $bootSizeMiB \
-    set 1 boot on \
-    align-check optimal 1 \
-    mkpart primary ext4 $bootSizeMiB 100% \
-    align-check optimal 2 \
-    print
-  sgdisk \
-    --disk-guid=97FD5997-D90B-4AA3-8D16-C1723AEA73C \
-    --partition-guid=1:1C06F03B-704E-4657-B9CD-681A087A2FDC \
-    --partition-guid=2:${rootGPUID} \
-    $diskImage
-  eval $(partx $diskImage -o START,SECTORS --nr 2 --pairs)
-  mkfs.ext4 -b 4096 -F -L ${label} $diskImage -E offset=$(( $START * 512 )) $(( ( $SECTORS * 512 ) / 1024 ))K
+  mkfs.ext4 $diskImage
+  mountPoint="$TMPDIR/mnt"
+  mount -o loop $diskImage $mountPoint
+  mkdir -p $mountPoint/boot 
+  mount -o size=512M,mode=0755 -t tmpfs none $mountPoint/boot
+  exit 1
+
+
+  # echo "creating diskImage..."
+  # truncate -s ${toString diskSize}M $diskImage
+  # parted --script $diskImage -- \
+  #   mklabel gpt \
+  #   mkpart ESP fat32 8MiB $bootSizeMiB \
+  #   set 1 boot on \
+  #   align-check optimal 1 \
+  #   mkpart primary ext4 $bootSizeMiB 100% \
+  #   align-check optimal 2 \
+  #   print
+  # sgdisk \
+  #   --disk-guid=97FD5997-D90B-4AA3-8D16-C1723AEA73C \
+  #   --partition-guid=1:1C06F03B-704E-4657-B9CD-681A087A2FDC \
+  #   --partition-guid=2:${rootGPUID} \
+  #   $diskImage
+  # eval $(partx $diskImage -o START,SECTORS --nr 2 --pairs)
+  # mkfs.ext4 -b 4096 -F -L ${label} $diskImage -E offset=$(( $START * 512 )) $(( ( $SECTORS * 512 ) / 1024 ))K
 
   echo "copying staging root to image..."
   cptofs -p -P 2 \
@@ -112,33 +122,31 @@ pkgs.runCommand "nixos-disk-image" { } ''
      $root/* / ||
     (echo >&2 "ERROR: cptofs failed. diskSize might be too small for closure."; exit 1)
 
-  # echo "patching diskImage..."
-  # loDevice=$(losetup -fP --show $diskImage)
-  # echo $loDevice
-  # espDisk="$loDevice/p1"
-  # rootDisk="$loDevice/p2"
-  # mountPoint="$TMPDIR/mnt"
-  #
-  # mkfs.vfat -n ESP $espDisk
-  # tune2fs -T now -U ${rootFSUID} -c 0 -i 0 $rootDisk
-  # mkdir -p $mountPoint
-  # mount $rootDisk $mountPoint
-  # mkdir -p $mountPoint/boot
-  # mount $espDisk $mountPoint/boot
-  # mkdir -p $mountPoint/etc/nixos
-  # ${
-    lib.optionalString (configFile != null) ''
-      #   cp ${configFile} $mountPoint/etc/nixos/configuration.nix
-      # ''
-  }
-  #
-  # echo "installing bootloader..."
-  # NIXOS_INSTALL_BOOTLOADER=1 nixos-enter --root $mountPoint -- /nix/var/nix/profiles/system/bin/switch-to-configuration boot
-  #
-  # echo "finishing..."
-  # umount -R $mountPoint
-  # tune2fs -T now -U ${rootFSUID} -c 0 -i 0 $rootDisk
-  # tune2fs -f -T 19700101 $rootDisk
+  echo "patching diskImage..."
+  loDevice=$(losetup -fP --show $diskImage)
+  echo $loDevice
+  espDisk="$loDevice/p1"
+  rootDisk="$loDevice/p2"
+  mountPoint="$TMPDIR/mnt"
+
+  mkfs.vfat -n ESP $espDisk
+  tune2fs -T now -U ${rootFSUID} -c 0 -i 0 $rootDisk
+  mkdir -p $mountPoint
+  mount $rootDisk $mountPoint
+  mkdir -p $mountPoint/boot
+  mount $espDisk $mountPoint/boot
+  mkdir -p $mountPoint/etc/nixos
+  ${lib.optionalString (configFile != null) ''
+    cp ${configFile} $mountPoint/etc/nixos/configuration.nix
+  ''}
+
+  echo "installing bootloader..."
+  NIXOS_INSTALL_BOOTLOADER=1 nixos-enter --root $mountPoint -- /nix/var/nix/profiles/system/bin/switch-to-configuration boot
+
+  echo "finishing..."
+  umount -R $mountPoint
+  tune2fs -T now -U ${rootFSUID} -c 0 -i 0 $rootDisk
+  tune2fs -f -T 19700101 $rootDisk
 
   mv $diskImage $out/${baseName}.img
 ''

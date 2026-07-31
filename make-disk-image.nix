@@ -131,6 +131,7 @@ pkgs.vmTools.runInLinuxVM (
     }
     ''
       export PATH=${binPath}:$PATH
+      export HOME=$TMPDIR
 
       espDisk="/dev/vda1"
       rootDisk="/dev/vda2"
@@ -155,33 +156,10 @@ pkgs.vmTools.runInLinuxVM (
       mount $espDisk $mountPoint/boot
 
       # Install a configuration.nix
-      mkdir -p $mountPoint/etc/nixos
       ${lib.optionalString (configFile != null) ''
+        mkdir -p $mountPoint/etc/nixos
         cp ${configFile} $mountPoint/etc/nixos/configuration.nix
       ''}
-
-      # In this throwaway resource, we only have /dev/vda, but the actual VM may refer to another disk for bootloader, e.g. /dev/vdb
-      # Use this option to create a symlink from vda to any arbitrary device you want.
-      ${lib.optionalString (config.boot.loader.grub.enable) (
-        lib.concatMapStringsSep " " (
-          device:
-          lib.optionalString (device != "/dev/vda") ''
-            mkdir -p "$(dirname ${device})"
-            ln -s /dev/vda ${device}
-          ''
-        ) config.boot.loader.grub.devices
-      )}
-      ${lib.optionalString
-        (
-          config.boot.loader.limine.enable
-          && config.boot.loader.limine.biosSupport
-          && config.boot.loader.limine.biosDevice != "/dev/vda"
-        )
-        ''
-          mkdir -p "$(dirname ${config.boot.loader.limine.biosDevice})"
-          ln -s /dev/vda ${config.boot.loader.limine.biosDevice}
-        ''
-      }
 
       # Set up core system link, bootloader (sd-boot, GRUB, uboot, etc.), etc.
       # NOTE: systemd-boot-builder.py calls nix-env --list-generations which
@@ -189,7 +167,6 @@ pkgs.vmTools.runInLinuxVM (
       # /homeless-shelter to show up in the final image which  in turn breaks
       # nix builds in the target image if sandboxing is turned off (through
       # __noChroot for example).
-      export HOME=$TMPDIR
       NIXOS_INSTALL_BOOTLOADER=1 nixos-enter --root $mountPoint -- /nix/var/nix/profiles/system/bin/switch-to-configuration boot
       umount -R $mountPoint
 
@@ -199,7 +176,6 @@ pkgs.vmTools.runInLinuxVM (
       # In deterministic mode, this is fixed to 1970-01-01 (UNIX timestamp 0).
       # This two-step approach is necessary otherwise `tune2fs` will want a fresher filesystem to perform
       # some changes.
-      tune2fs -T now -U ${rootFSUID} -c 0 -i 0 $rootDisk
-      tune2fs -f -T 19700101 $rootDisk
+      tune2fs -f -T 19700101 -U "${rootFSUID}" -c 0 -i 0 $rootDisk
     ''
 )
