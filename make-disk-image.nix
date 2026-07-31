@@ -5,7 +5,7 @@
   # The NixOS configuration to be installed onto the disk image.
   config,
   # The size of the disk, in MiB (1024*1024 bytes).
-  diskSize ? "4096",
+  diskSize ? 4096,
   # This will be undersized slightly, as this is actually the offset of
   # the end of the partition. Generally it will be 1MiB smaller.
   bootSize ? "256M",

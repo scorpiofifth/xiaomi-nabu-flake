@@ -16,6 +16,7 @@
         image = (import ./make-disk-image.nix) {
           inherit pkgs lib;
           memSize = 2048;
+          diskSize = 2048;
           config =
             (nixpkgs.lib.nixosSystem {
               specialArgs = { inherit flakes; };
@@ -29,12 +30,14 @@
                   boot.growPartition = lib.mkDefault true;
                   fileSystems = {
                     "/" = {
-                      device = "/dev/disk/by-label/nixos";
+                      # device = "/dev/disk/by-label/nixos";
+                      label = "linux";
                       autoResize = true;
                       fsType = "ext4";
                     };
                     "/boot" = {
-                      device = "/dev/disk/by-label/ESP";
+                      # device = "/dev/disk/by-label/ESP";
+                      label = "esp";
                       fsType = "vfat";
                     };
                   };
