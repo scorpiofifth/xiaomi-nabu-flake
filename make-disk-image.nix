@@ -70,10 +70,6 @@ assert (
 );
 
 let
-  filename = "${baseName}.img";
-
-  rootPartition = "2";
-
   useEFIBoot = touchEFIVars;
 
   nixpkgs = lib.cleanSource pkgs.path;
@@ -251,12 +247,12 @@ let
       $diskImage
 
     # Get start & length of the root partition in sectors to $START and $SECTORS.
-      eval $(partx $diskImage -o START,SECTORS --nr ${rootPartition} --pairs)
+      eval $(partx $diskImage -o START,SECTORS --nr 2 --pairs)
 
     mkfs.ext4 -b ${blockSize} -F -L ${label} $diskImage -E offset=$(sectorsToBytes $START) $(sectorsToKilobytes $SECTORS)K
 
     echo "copying staging root to image..."
-    cptofs -p "-P ${rootPartition}" \
+    cptofs -p -P 2 \
            -t ext4 \
            -i $diskImage \
            $root/* / ||
@@ -264,8 +260,8 @@ let
   '';
 
   moveImage = ''
-    mv $diskImage $out/${filename}
-    diskImage=$out/${filename}
+    mv $diskImage $out/${baseName}.img
+    diskImage=$out/${baseName}.img
   '';
 
   createEFIVars = ''
@@ -276,7 +272,7 @@ let
 
   createHydraBuildProducts = ''
     mkdir -p $out/nix-support
-    echo "file raw-image $out/${filename}" >> $out/nix-support/hydra-build-products
+    echo "file raw-image $out/${baseName}.img" >> $out/nix-support/hydra-build-products
   '';
 in
 # buildImage
@@ -307,7 +303,7 @@ pkgs.vmTools.runInLinuxVM (
     ''
       export PATH=${binPath}:$PATH
 
-      rootDisk="/dev/vda${rootPartition}"
+      rootDisk="/dev/vda2"
 
       # It is necessary to set root filesystem unique identifier in advance, otherwise
       # bootloader might get the wrong one and fail to boot.
