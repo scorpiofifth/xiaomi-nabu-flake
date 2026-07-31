@@ -151,7 +151,7 @@
   fsType ? "ext4",
 
   # Filesystem label
-  label ? if onlyNixStore then "nix-store" else "nixos",
+  label ? "ixos",
 
   # The initial NixOS configuration file to be copied to
   # /etc/nixos/configuration.nix.
@@ -162,11 +162,6 @@
 
   # Guest memory size in MiB (1024*1024 bytes)
   memSize ? 1024,
-
-  # Copy the contents of the Nix store to the root of the image and
-  # skip further setup. Incompatible with `contents`,
-  # `installBootLoader` and `configFile`.
-  onlyNixStore ? false,
 
   name ? "nixos-disk-image",
 
@@ -233,11 +228,6 @@ assert (
         || partitionTableType == "legacy+gpt"
     )
     "EFI variables can be used only with a partition table of type: hybrid, efi, efixbootldr, or legacy+gpt."
-);
-# If only Nix store image, then: contents must be empty, configFile must be unset, and we should no install bootloader.
-assert (
-  lib.assertMsg (onlyNixStore -> contents == [ ] && configFile == null && !installBootLoader)
-    "In a only Nix store image, the contents must be empty, no configuration must be provided and no bootloader should be installed."
 );
 # Either both or none of {user,group} need to be set
 assert (
@@ -552,7 +542,7 @@ let
     cptofs -p ${lib.optionalString (partitionTableType != "none") "-P ${rootPartition}"} \
            -t ${fsType} \
            -i $diskImage \
-           $root${lib.optionalString onlyNixStore builtins.storeDir}/* / ||
+           $root/* / ||
       (echo >&2 "ERROR: cptofs failed. diskSize might be too small for closure."; exit 1)
   '';
 
@@ -717,7 +707,4 @@ let
       ''
   );
 in
-if onlyNixStore then
-  pkgs.runCommand name { } (prepareImage + moveOrConvertImage + createHydraBuildProducts + postVM)
-else
-  buildImage
+buildImage
