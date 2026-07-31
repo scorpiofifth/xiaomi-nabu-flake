@@ -9,6 +9,8 @@ make-disk-image {
   inherit
     (evalConfig {
       modules = [
+        # TODO: it is for github actions tests
+        { nixpkgs.hostPlatform = "aarch64-linux"; }
         {
           # this is `raw-efi` config from `nixos/modules/image/images`
           boot.loader.systemd-boot.enable = lib.mkDefault true;

@@ -18,6 +18,6 @@ jobs:
         with:
           name: nixpkgs-for-nabu
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
-      - name: Package the `default.nix`
+      - name: Build
         run: |
-          nix build --print-build-logs .#image
+          nix-build test.nix --system aarch64-linux
