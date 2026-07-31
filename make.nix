@@ -94,7 +94,6 @@ pkgs.runCommand "nixos-disk-image" { } ''
   mount -o loop $diskImage $mountPoint
   mkdir -p $mountPoint/boot 
   mount -o size=512M,mode=0755 -t tmpfs none $mountPoint/boot
-  exit 1
 
 
   # echo "creating diskImage..."

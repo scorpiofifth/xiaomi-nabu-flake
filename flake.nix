@@ -8,6 +8,36 @@
       lib = pkgs.lib;
     in
     {
+      devShells.aarch64-linux.default = import ./image-test/shell.nix {
+        inherit pkgs lib;
+        config =
+          (nixpkgs.lib.nixosSystem {
+            specialArgs = { inherit flakes; };
+            modules = [
+              ./config.nix
+              ./hardware.nix
+              { nixpkgs.hostPlatform = "aarch64-linux"; }
+              {
+                # this is `raw-efi` config from `nixos/modules/image/images`
+                boot.loader.systemd-boot.enable = lib.mkDefault true;
+                boot.growPartition = lib.mkDefault true;
+                fileSystems = {
+                  "/" = {
+                    # device = "/dev/disk/by-label/nixos";
+                    label = "linux";
+                    autoResize = true;
+                    fsType = "ext4";
+                  };
+                  "/boot" = {
+                    # device = "/dev/disk/by-label/ESP";
+                    label = "esp";
+                    fsType = "vfat";
+                  };
+                };
+              }
+            ];
+          }).config;
+      };
       packages.aarch64-linux = {
         default = self.packages.aarch64-linux.image;
         linux-nabu = pkgs.callPackage ./packages/linux-nabu { };
