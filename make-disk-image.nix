@@ -112,23 +112,7 @@ let
   prepareImage = ''
     export PATH=${binPath}
 
-    # Given lines of numbers, adds them together
-    sum_lines() {
-      local acc=0
-      while read -r number; do
-        acc=$((acc+number))
-      done
-      echo "$acc"
-    }
-
     mebibyte=$(( 1024 * 1024 ))
-
-    # Approximative percentage of reserved space in an ext4 fs over 512MiB.
-    # 0.05208587646484375
-    #  × 1000, integer part: 52
-    compute_fudge() {
-      echo $(( $1 * 52 / 1000 ))
-    }
 
     round_to_nearest() {
       echo $(( ( $1 / $2 + 1) * $2 ))
