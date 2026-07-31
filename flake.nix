@@ -15,7 +15,7 @@
             specialArgs = { inherit flakes; };
             modules = [
               ./config.nix
-              ./hardware.nix
+              # ./hardware.nix
               { nixpkgs.hostPlatform = "aarch64-linux"; }
               {
                 # this is `raw-efi` config from `nixos/modules/image/images`

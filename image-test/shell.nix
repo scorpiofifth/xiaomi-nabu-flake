@@ -24,16 +24,16 @@ pkgs.mkShell rec {
   binPath = lib.makeBinPath (
     with pkgs;
     [
-      dosfstools
-      util-linux
-      parted
-      e2fsprogs
-      lkl
       config.system.build.nixos-install
-      nixos-enter
-      nix
+      dosfstools
+      e2fsprogs
       gptfdisk
+      lkl
+      nix
+      nixos-enter
+      parted
       systemdMinimal
+      util-linux
     ]
     ++ stdenv.initialPath
   );
