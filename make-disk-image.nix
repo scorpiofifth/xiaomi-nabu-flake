@@ -252,23 +252,18 @@ let
     mv $diskImage $out/${baseName}.img
     diskImage=$out/${baseName}.img
   '';
-
-  createHydraBuildProducts = ''
-    mkdir -p $out/nix-support
-    echo "file raw-image $out/${baseName}.img" >> $out/nix-support/hydra-build-products
-  '';
 in
 # buildImage
 pkgs.vmTools.runInLinuxVM (
   pkgs.runCommand name
     {
-      preVM = prepareImage;
       buildInputs = with pkgs; [
         util-linux
         e2fsprogs
         dosfstools
       ];
-      postVM = moveImage + createHydraBuildProducts + postVM;
+      preVM = prepareImage;
+      postVM = moveImage + postVM;
       QEMU_OPTS = lib.concatStringsSep " " (
         lib.optionals (OVMF.systemManagementModeRequired or false) [
           "-machine"
@@ -319,13 +314,15 @@ pkgs.vmTools.runInLinuxVM (
           ''
         ) config.boot.loader.grub.devices
       )}
-      ${
-        let
-          limine = config.boot.loader.limine;
-        in
-        lib.optionalString (limine.enable && limine.biosSupport && limine.biosDevice != "/dev/vda") ''
-          mkdir -p "$(dirname ${limine.biosDevice})"
-          ln -s /dev/vda ${limine.biosDevice}
+      ${lib.optionalString
+        (
+          config.boot.loader.limine.enable
+          && config.boot.loader.limine.biosSupport
+          && config.boot.loader.limine.biosDevice != "/dev/vda"
+        )
+        ''
+          mkdir -p "$(dirname ${config.boot.loader.limine.biosDevice})"
+          ln -s /dev/vda ${config.boot.loader.limine.biosDevice}
         ''
       }
 
