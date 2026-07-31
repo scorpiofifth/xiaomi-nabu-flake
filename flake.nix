@@ -8,7 +8,7 @@
       lib = pkgs.lib;
     in
     {
-      devShells.aarch64-linux.default = import ./image-buider/shell.nix {
+      devShells.aarch64-linux.default = import ./image-builder/shell.nix {
         inherit pkgs lib;
         config =
           (nixpkgs.lib.nixosSystem {
