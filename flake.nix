@@ -16,7 +16,7 @@
         image = (import ./make-disk-image.nix) {
           inherit pkgs lib;
           memSize = 2048;
-          diskSize = 2048;
+          diskSize = 4096;
           config =
             (nixpkgs.lib.nixosSystem {
               specialArgs = { inherit flakes; };
