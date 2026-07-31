@@ -32,9 +32,6 @@
   # /etc/nixos/configuration.nix.
   configFile ? null,
 
-  # Shell code executed after the VM has finished.
-  postVM ? "",
-
   # Guest memory size in MiB (1024*1024 bytes)
   memSize ? 1024,
 
@@ -114,15 +111,6 @@ let
 
   prepareImage = ''
     export PATH=${binPath}
-
-    # Yes, mkfs.ext4 takes different units in different contexts. Fun.
-    sectorsToKilobytes() {
-      echo $(( ( "$1" * 512 ) / 1024 ))
-    }
-
-    sectorsToBytes() {
-      echo $(( "$1" * 512  ))
-    }
 
     # Given lines of numbers, adds them together
     sum_lines() {
@@ -236,7 +224,7 @@ let
     # Get start & length of the root partition in sectors to $START and $SECTORS.
     eval $(partx $diskImage -o START,SECTORS --nr 2 --pairs)
 
-    mkfs.ext4 -b 4096 -F -L ${label} $diskImage -E offset=$(sectorsToBytes $START) $(sectorsToKilobytes $SECTORS)K
+    mkfs.ext4 -b 4096 -F -L ${label} $diskImage -E offset=$(( $START * 512 )) $(( ( $SECTORS * 512 ) / 1024 ))K
 
     echo "copying staging root to image..."
     cptofs -p -P 2 \
@@ -244,11 +232,6 @@ let
            -i $diskImage \
            $root/* / ||
       (echo >&2 "ERROR: cptofs failed. diskSize might be too small for closure."; exit 1)
-  '';
-
-  moveImage = ''
-    mv $diskImage $out/${baseName}.img
-    diskImage=$out/${baseName}.img
   '';
 in
 # buildImage
@@ -261,7 +244,7 @@ pkgs.vmTools.runInLinuxVM (
         dosfstools
       ];
       preVM = prepareImage;
-      postVM = moveImage + postVM;
+      postVM = "mv $diskImage $out/${baseName}.img ";
       QEMU_OPTS = lib.concatStringsSep " " (
         lib.optionals (OVMF.systemManagementModeRequired or false) [
           "-machine"
