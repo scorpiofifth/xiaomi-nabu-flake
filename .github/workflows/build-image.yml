@@ -20,7 +20,7 @@ jobs:
         run: chmod o+rx /home/runner
       - name: Build
         run: |
-          nix develop --system aarch64-linux -L -c bash ./image-builder/main.sh
+          nix develop --system aarch64-linux -L -c bash ./image-builder/main-plus.sh
       - name: Upload partiton artifact
         uses: actions/upload-artifact@v7
         with:
