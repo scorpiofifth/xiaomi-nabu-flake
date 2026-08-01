@@ -29,11 +29,6 @@ parted --script "$diskImage" -- \
   mkpart primary ext4 "$bootSizeMiB" 100% \
   align-check optimal 2 \
   print
-# sgdisk \
-#   --disk-guid=97FD5997-D90B-4AA3-8D16-C1723AEA73C \
-#   --partition-guid=1:1C06F03B-704E-4657-B9CD-681A087A2FDC \
-#   --partition-guid=2:"$rootGPUID" \
-#   "$diskImage"
 echo "::endgroup::"
 
 loDevice=$(sudo losetup -fP --show "$diskImage")
@@ -44,7 +39,6 @@ mountPoint="$TMPDIR/mnt"
 echo "::group::mount partition"
 sudo mkfs.vfat -n ESP "$espDisk"
 sudo mkfs.ext4 -b 4096 -F -L "$label" "$rootDisk"
-# sudo "$(which tune2fs)" -T now -U "$rootFSUID" -c 0 -i 0 "$rootDisk"
 sudo ln -s "$espDisk" "/dev/block/254:1" # fix systemd-boot error
 echo "mounting rootDisk..."
 sudo mount --mkdir "$rootDisk" "$mountPoint"
@@ -69,11 +63,6 @@ NIXOS_INSTALL_BOOTLOADER=1 sudo env "PATH=$PATH" nixos-enter \
   -- /nix/var/nix/profiles/system/bin/switch-to-configuration boot
 echo "::endgroup::"
 
-# echo "::group::tune2fs"
-# sudo "$(which tune2fs)" -T now -U "$rootFSUID" -c 0 -i 0 "$rootDisk"
-# sudo "$(which tune2fs)" -f -T 19700101 "$rootDisk"
-# echo "::endgroup::"
-
 echo "::group::collect efi files"
 mkdir -p "$out/efi"
 sudo cp -r "$mountPoint"/boot/* "$out/efi"
@@ -85,7 +74,7 @@ sudo rm "/dev/block/254:1"
 echo "::endgroup::"
 
 echo "::group::copy the images"
-sudo dd if="$espDisk" of="$TMPDIR/esp.img"
+# sudo dd if="$espDisk" of="$TMPDIR/esp.img"
 sudo dd if="$rootDisk" of="$TMPDIR/rootfs.img"
 sudo "$(which e2fsck)" -f "$TMPDIR/rootfs.img" -y
 sudo "$(which resize2fs)" "$TMPDIR/rootfs.img" -M

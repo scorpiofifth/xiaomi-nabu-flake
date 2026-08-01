@@ -9,7 +9,7 @@
   boot = {
     # NOTE: hardware devicetree will be automatically enabled
     kernelPackages = pkgs.linuxPackagesFor flakes.self.packages.aarch64-linux.linux-nabu;
-    # kernelParams = [ "acpi=off" ];
+    kernelParams = [ "acpi=off" ];
     initrd.availableKernelModules = lib.mkForce [
       # NOTE: following comes from alarm: `mkinitcpio -M`
       "arm_smmu"
