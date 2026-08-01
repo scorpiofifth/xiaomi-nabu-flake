@@ -2,6 +2,7 @@
   pkgs,
   lib,
   sfpkgs,
+  config,
   ...
 }:
 {
@@ -37,6 +38,7 @@
     loader.systemd-boot.enable = lib.mkDefault true;
     growPartition = lib.mkDefault true;
     kernelPackages = pkgs.linuxPackagesFor sfpkgs.linux-nabu;
+    kernelModules = config.boot.initrd.availableKernelModules;
     initrd = {
       systemd.emergencyAccess = true;
       availableKernelModules = lib.mkForce [

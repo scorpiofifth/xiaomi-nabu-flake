@@ -1,4 +1,4 @@
-{ ... }:
+{ pkgs, ... }:
 {
   system.stateVersion = "26.11";
 
@@ -15,5 +15,15 @@
   nix.settings.experimental-features = [
     "nix-command"
     "flakes"
+  ];
+
+  #TODO: move followings out cuz it makes the
+  # image larger than it should
+  console.keyMap = "colemak";
+  time.timeZone = "Asia/Shanghai";
+  environment.systemPackages = with pkgs; [
+    fastfetch
+    git
+    neovim
   ];
 }
