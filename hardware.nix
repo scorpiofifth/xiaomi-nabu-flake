@@ -13,7 +13,6 @@
   boot = {
     # NOTE: hardware devicetree will be automatically enabled
     kernelPackages = pkgs.linuxPackagesFor flakes.self.packages.aarch64-linux.linux-nabu;
-    # kernelParams = [ "acpi=off" ];
     initrd.availableKernelModules = lib.mkForce [
       # NOTE: following comes from alarm: `mkinitcpio -M`
       "arm_smmu"
@@ -86,16 +85,16 @@
   };
 
   # TODO:
-  # hardware.firmware = [
-  #   pkgs.linux-firmware
-  #   flakes.self.packages.aarch64-linux.linux-firmware-xiaomi-nabu
-  # ];
+  hardware.firmware = [
+    pkgs.linux-firmware
+    flakes.self.packages.aarch64-linux.linux-firmware-xiaomi-nabu
+  ];
 
   # TODO: tool for firmware
-  # environment.systemPackages = with pkgs; [
-  #   tqftpserv
-  #   rmtfs
-  # ];
+  environment.systemPackages = with pkgs; [
+    tqftpserv
+    rmtfs
+  ];
 
   warnings = [
     # "This warning is for debugging."
