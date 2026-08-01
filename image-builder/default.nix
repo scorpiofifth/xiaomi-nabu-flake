@@ -12,7 +12,10 @@
   label ? "nixos",
   # The initial NixOS configuration file to be copied to
   # /etc/nixos/configuration.nix.
-  configFile ? null,
+  configFile ? ./nixos/configuration.nix,
+  # The initial NixOS hardware configuration file to be copied to
+  # /etc/nixos/hardware-configuration.nix.
+  hardwareFile ? ./nixos/hardware-configuration.nix,
   # GPT Partition Unique Identifier for root partition.
   rootGPUID ? "F222513B-DED1-49FA-B591-20CE86A2FE7F",
   rootFSUID ? rootGPUID,
@@ -59,6 +62,7 @@ pkgs.mkShell rec {
   inherit
     bootSize
     configFile
+    hardwareFile
     diskSize
     label
     rootFSUID

@@ -22,7 +22,7 @@ jobs:
         run: |
           nix develop \
             --system aarch64-linux -L \
-            -c bash ./image-builder/main-plus.sh
+            -c bash ./build.sh
       - name: Generate UKI and move image
         run: |
           nix build .#nixosConfigurations.default.config.system.build.uki

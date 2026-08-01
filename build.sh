@@ -1,9 +1,12 @@
 # shellcheck disable=SC2154
 
+# WARNING: this script should be run by nix shells
+
 # NOTE: it seemd that all operations with
 # sudo can't use app from nixpkgs
 # so you should use `sudo "$(which command)"`
 # cuz it use app from PATH
+
 set -euo pipefail
 
 round_to_nearest() {
