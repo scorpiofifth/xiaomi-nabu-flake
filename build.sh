@@ -66,6 +66,11 @@ NIXOS_INSTALL_BOOTLOADER=1 sudo env "PATH=$PATH" nixos-enter \
   -- /nix/var/nix/profiles/system/bin/switch-to-configuration boot
 echo "::endgroup::"
 
+echo "::group::inject config files"
+sudo mkdir -p "$mountPoint"/etc/nixos
+sudo cp "$configFile" "$hardwareFile" "$mountPoint"/etc/nixos
+echo "::endgroup::"
+
 echo "::group::collect efi files"
 mkdir -p "$out/efi"
 sudo cp -r "$mountPoint"/boot/* "$out/efi"
