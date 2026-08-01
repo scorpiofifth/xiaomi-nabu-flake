@@ -53,7 +53,7 @@ echo "::endgroup::"
 
 echo "::group::nixos-install"
 nix-store --load-db <"${closureInfo}/registration"
-sudo "$(which nixos-install)" \
+sudo env "PATH=$PATH" nixos-install \
   --channel "$channelSources" \
   --no-bootloader \
   --no-root-passwd \
@@ -63,7 +63,7 @@ sudo "$(which nixos-install)" \
 echo "::endgroup::"
 
 echo "::group::nixos-enter"
-NIXOS_INSTALL_BOOTLOADER=1 sudo "$(which nixos-enter)" \
+NIXOS_INSTALL_BOOTLOADER=1 sudo env "PATH=$PATH" nixos-enter \
   --root "$mountPoint" \
   -- /nix/var/nix/profiles/system/bin/switch-to-configuration boot
 echo "::endgroup::"
