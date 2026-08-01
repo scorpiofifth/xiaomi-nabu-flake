@@ -26,17 +26,12 @@ jobs:
       - name: Generate UKI and move image
         run: |
           nix build .#nixosConfigurations.default.config.system.build.uki
-          mkdir ./efi/nixos ./images
-          cp ./result/nixos.efi ./efi/nixos
-          sudo chown -R $USER:$USER ./efi
-          mv outputs/out/rootfs.img ./images
+          mkdir ./installer/efi/nixos ./installer/images
+          cp ./result/nixos.efi ./installer/efi/nixos
+          sudo chown -R $USER:$USER ./installer/efi
+          mv outputs/out/rootfs.img ./installer/images
       - name: Upload installer
         uses: actions/upload-artifact@v7
         with:
           name: nixos-nabu-installer
-          path: |
-            bin
-            DBKP
-            efi
-            images
-            META-INF
+          path: installer
