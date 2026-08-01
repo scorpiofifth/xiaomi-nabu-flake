@@ -10,9 +10,6 @@
   bootSize ? "256M",
   # Filesystem label
   label ? "nixos",
-  # GPT Partition Unique Identifier for root partition.
-  rootGPUID ? "F222513B-DED1-49FA-B591-20CE86A2FE7F",
-  rootFSUID ? rootGPUID,
   ...
 }:
 pkgs.mkShell rec {
@@ -53,15 +50,7 @@ pkgs.mkShell rec {
 
   configBuild = config.system.build.toplevel;
 
-  inherit
-    bootSize
-    configFile
-    hardwareFile
-    diskSize
-    label
-    rootFSUID
-    rootGPUID
-    ;
+  inherit bootSize diskSize label;
 
   shellHook = ''
     export PATH=$binPath:$PATH
