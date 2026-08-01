@@ -53,7 +53,7 @@ echo "::endgroup::"
 
 echo "::group::nixos-install"
 nix-store --load-db <"${closureInfo}/registration"
-nixos-install \
+sudo "$(which nixos-install)" \
   --channel "$channelSources" \
   --no-bootloader \
   --no-root-passwd \
