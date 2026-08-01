@@ -10,8 +10,25 @@
     enable = true;
     name = "qcom/sm8150-xiaomi-nabu.dtb";
   };
+
+  nixpkgs.hostPlatform = "aarch64-linux";
+
+  # `raw-efi` config from `nixos/modules/image/images`
+  boot.loader.systemd-boot.enable = lib.mkDefault true;
+  boot.growPartition = lib.mkDefault true;
+  fileSystems = {
+    "/" = {
+      device = "/dev/disk/by-partlabel/linux";
+      autoResize = true;
+      fsType = "ext4";
+    };
+    "/boot" = {
+      device = "/dev/disk/by-partlabel/esp";
+      fsType = "vfat";
+    };
+  };
+
   boot = {
-    # NOTE: hardware devicetree will be automatically enabled
     kernelPackages = pkgs.linuxPackagesFor flakes.self.packages.aarch64-linux.linux-nabu;
     initrd.availableKernelModules = lib.mkForce [
       # NOTE: following comes from alarm: `mkinitcpio -M`
@@ -84,13 +101,11 @@
     ];
   };
 
-  # TODO:
   hardware.firmware = [
     pkgs.linux-firmware
     flakes.self.packages.aarch64-linux.linux-firmware-xiaomi-nabu
   ];
 
-  # TODO: tool for firmware
   environment.systemPackages = with pkgs; [
     tqftpserv
     rmtfs

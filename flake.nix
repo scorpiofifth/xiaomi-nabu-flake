@@ -13,23 +13,6 @@
         modules = [
           ./config.nix
           ./hardware.nix
-          { nixpkgs.hostPlatform = "aarch64-linux"; }
-          {
-            # `raw-efi` config from `nixos/modules/image/images`
-            boot.loader.systemd-boot.enable = lib.mkDefault true;
-            boot.growPartition = lib.mkDefault true;
-            fileSystems = {
-              "/" = {
-                label = "linux";
-                autoResize = true;
-                fsType = "ext4";
-              };
-              "/boot" = {
-                label = "esp";
-                fsType = "vfat";
-              };
-            };
-          }
         ];
       };
       devShells.aarch64-linux.default = import ./image-builder/shell.nix {
