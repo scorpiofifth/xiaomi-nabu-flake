@@ -15,6 +15,7 @@ mebibyte="$((1024 * 1024))"
 bootSize="$(round_to_nearest "$(numfmt --from=iec "$bootSize")" $mebibyte)"
 bootSizeMiB="$((bootSize / 1024 / 1024))MiB"
 
+sudo rm -rf "$out"
 mkdir -p "$out"
 chmod 755 "$TMPDIR"
 
@@ -68,10 +69,10 @@ NIXOS_INSTALL_BOOTLOADER=1 sudo env "PATH=$PATH" nixos-enter \
   -- /nix/var/nix/profiles/system/bin/switch-to-configuration boot
 echo "::endgroup::"
 
-echo "::group::tune2fs"
+# echo "::group::tune2fs"
 # sudo "$(which tune2fs)" -T now -U "$rootFSUID" -c 0 -i 0 "$rootDisk"
 # sudo "$(which tune2fs)" -f -T 19700101 "$rootDisk"
-echo "::endgroup::"
+# echo "::endgroup::"
 
 echo "::group::collect efi files"
 mkdir -p "$out/efi"
