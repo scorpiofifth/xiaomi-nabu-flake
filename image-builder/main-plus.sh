@@ -74,7 +74,7 @@ sudo rm "/dev/block/254:1"
 echo "::endgroup::"
 
 echo "::group::copy the images"
-# sudo dd if="$espDisk" of="$TMPDIR/esp.img"
+sudo dd if="$espDisk" of="$TMPDIR/esp.img"
 sudo dd if="$rootDisk" of="$TMPDIR/rootfs.img"
 sudo "$(which e2fsck)" -f "$TMPDIR/rootfs.img" -y
 sudo "$(which resize2fs)" "$TMPDIR/rootfs.img" -M
