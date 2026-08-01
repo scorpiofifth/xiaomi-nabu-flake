@@ -31,7 +31,7 @@ nixos-install \
   --system "$configBuild"
 echo "::endgroup::"
 
-echo "creating img..."
+echo "::group::create and setup image"
 truncate -s "${diskSize}M" "$diskImage"
 parted --script "$diskImage" -- \
   mklabel gpt \
@@ -46,11 +46,13 @@ sgdisk \
   --partition-guid=1:1C06F03B-704E-4657-B9CD-681A087A2FDC \
   --partition-guid=2:"$rootGPUID" \
   "$diskImage"
-
-# Get start & length of the root partition in sectors to $START and $SECTORS.
 eval "$(partx "$diskImage" -o START,SECTORS --nr 2 --pairs)"
+echo "var debugger:"
+echo "START: $START"
+echo "SECTORS:$SECTORS"
 mkfs.ext4 -b 4096 -F -L "$label" "$diskImage" -E offset=$((START * 512)) $(((SECTORS * 512) / 1024))K
-echo "$START" "$SECTORS"
+echo "::endgroup::"
+
 echo "copying staging root to image..."
 cptofs -p -P 2 \
   -t ext4 \
@@ -84,16 +86,20 @@ NIXOS_INSTALL_BOOTLOADER=1 sudo "$(which nixos-enter)" \
   -- /nix/var/nix/profiles/system/bin/switch-to-configuration boot
 echo "::endgroup::"
 
+echo "::group::collect efi files"
+mkdir -p "$out/efi"
+sudo cp -r "$mountPoint"/boot/* "$out/efi"
+echo "::endgroup::"
+
 sudo umount -R "$mountPoint"
 sudo rm "/dev/block/254:1"
 
 sudo tune2fs -T now -U "$rootFSUID" -c 0 -i 0 "$rootDisk"
 sudo tune2fs -f -T 19700101 "$rootDisk"
 
-echo "::group::cp the image and files"
-mkdir -p "$out/efi"
-sudo cp -r "$mountPoint"/boot/* "$out/efi"
+echo "::group::cp the image"
 sudo dd if="$espDisk" of="$out/esp.img"
+# TODO: compress it by `resize2fs`
 sudo dd if="$rootDisk" of="$out/rootfs.img"
 mv "$diskImage" "$out/nixos.img"
 echo "::endgroup::"
