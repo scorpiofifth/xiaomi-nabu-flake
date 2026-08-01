@@ -29,10 +29,7 @@
           inherit flakes;
           sfpkgs = flakes.self.packages.${system};
         };
-        modules = [
-          ./image-builder/nixos/configuration.nix
-          ./image-builder/nixos/hardware-configuration.nix
-        ];
+        modules = [ ./image-builder/nixos/configuration.nix ];
       };
     };
 }

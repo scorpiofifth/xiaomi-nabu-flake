@@ -68,7 +68,8 @@ echo "::endgroup::"
 
 echo "::group::inject config files"
 sudo mkdir -p "$mountPoint"/etc/nixos
-sudo cp "$configFile" "$hardwareFile" "$mountPoint"/etc/nixos
+sudo cp "$configFile" "$mountPoint/etc/nixos/configuration.nix"
+sudo cp "$hardwareFile" "$mountPoint/etc/nixos/hardware-configuration.nix"
 echo "::endgroup::"
 
 echo "::group::collect efi files"

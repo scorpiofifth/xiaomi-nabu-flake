@@ -1,5 +1,7 @@
 { pkgs, ... }:
 {
+  imports = [ ./hardware-configuration.nix ];
+
   system.stateVersion = "26.11";
 
   users.users.root.password = "root";
@@ -10,7 +12,10 @@
     networkmanager.enable = true;
   };
 
-  services.openssh.enable = true;
+  services.openssh = {
+    enable = true;
+    settings.PermitRootLogin = "yes";
+  };
 
   nix.settings.experimental-features = [
     "nix-command"
@@ -21,24 +26,63 @@
   # image larger than it should
   console.keyMap = "colemak";
   time.timeZone = "Asia/Shanghai";
-  environment.systemPackages = with pkgs; [
-    fastfetch
-    git
-    neovim
-    fish
+  environment.systemPackages = [
+    pkgs.fish
+    (pkgs.writeShellApplication {
+      name = "rotate-screen";
+      text = "echo 1 >/sys/class/graphics/fbcon/rotate_all";
+    })
+    (pkgs.writeShellApplication {
+      name = "connect-wifi";
+      runtimeInputs = [ pkgs.networkmanager ];
+      text = ''
+        nmcli device wifi list
+        nmcli device wifi connect "CMCC-H6Rf" password "XUAan4Um"
+        sudo nmcli connection modify "CMCC-H6Rf" \
+                ipv4.method manual \
+                ipv4.addresses 192.168.100.166/24 \
+                ipv4.gateway 192.168.100.1
+        sudo nmcli connection down "CMCC-H6Rf" &&
+                sudo nmcli connection up "CMCC-H6Rf"
+      '';
+    })
   ];
-  users.users.nix = {
-    password = "nix";
-    ignoreShellProgramCheck = true;
-    isNormalUser = true;
-    extraGroups = [ "wheel" ];
+  nix.settings = {
+    substituters = [
+      "https://mirrors.ustc.edu.cn/nix-channels/store"
+      "https://nixpkgs-for-nabu.cachix.org"
+    ];
+    trusted-public-keys = [
+      "nixpkgs-for-nabu.cachix.org-1:OAXPmcIw5ewZYJK9QDLRNJZYy05/uBsNoZIKW7BiKAQ="
+    ];
   };
-  security.sudo = {
-    enable = true;
-    wheelNeedsPassword = false;
+  # TODO: check it out
+  networking.networkmanager.ensureProfiles.CMCC-H6Rf = {
+    connection = {
+      id = "CMCC-H6Rf";
+      interface-name = "wld0";
+      timestamp = "1785579130";
+      type = "wifi";
+      uuid = "b310532e-bc38-4756-b388-f026f721ca94";
+    };
+    ipv4 = {
+      address1 = "192.168.100.166/24";
+      gateway = "192.168.100.1";
+      method = "manual";
+    };
+    ipv6 = {
+      addr-gen-mode = "default";
+      method = "auto";
+    };
+    proxy = { };
+    wifi = {
+      mode = "infrastructure";
+      ssid = "CMCC-H6Rf";
+    };
+    wifi-security = {
+      auth-alg = "open";
+      key-mgmt = "wpa-psk";
+      psk = "XUAan4Um";
+    };
   };
-  nix.settings.substituters = [
-    "https://mirrors.ustc.edu.cn/nix-channels/store"
-  ];
-
 }
