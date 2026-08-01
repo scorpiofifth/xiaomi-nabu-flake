@@ -56,33 +56,4 @@
       "nixpkgs-for-nabu.cachix.org-1:OAXPmcIw5ewZYJK9QDLRNJZYy05/uBsNoZIKW7BiKAQ="
     ];
   };
-  # TODO: check it out
-  networking.networkmanager.ensureProfiles.profiles."CMCC-H6Rf" = {
-    connection = {
-      id = "CMCC-H6Rf";
-      interface-name = "wld0";
-      timestamp = "1785579130";
-      type = "wifi";
-      uuid = "b310532e-bc38-4756-b388-f026f721ca94";
-    };
-    ipv4 = {
-      address1 = "192.168.100.166/24";
-      gateway = "192.168.100.1";
-      method = "manual";
-    };
-    ipv6 = {
-      addr-gen-mode = "default";
-      method = "auto";
-    };
-    proxy = { };
-    wifi = {
-      mode = "infrastructure";
-      ssid = "CMCC-H6Rf";
-    };
-    wifi-security = {
-      auth-alg = "open";
-      key-mgmt = "wpa-psk";
-      psk = "XUAan4Um";
-    };
-  };
 }
