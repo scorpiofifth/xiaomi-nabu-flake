@@ -57,7 +57,7 @@
     ];
   };
   # TODO: check it out
-  networking.networkmanager.ensureProfiles.CMCC-H6Rf = {
+  networking.networkmanager.ensureProfiles.profiles."CMCC-H6Rf" = {
     connection = {
       id = "CMCC-H6Rf";
       interface-name = "wld0";
