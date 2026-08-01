@@ -1,21 +1,20 @@
 {
   pkgs,
   lib,
-  flakes,
-  config,
+  sfpkgs,
   ...
 }:
 {
-  hardware.deviceTree = {
-    enable = true;
-    name = "qcom/sm8150-xiaomi-nabu.dtb";
-  };
-
   nixpkgs.hostPlatform = "aarch64-linux";
 
-  # `raw-efi` config from `nixos/modules/image/images`
-  boot.loader.systemd-boot.enable = lib.mkDefault true;
-  boot.growPartition = lib.mkDefault true;
+  hardware = {
+    deviceTree.name = "qcom/sm8150-xiaomi-nabu.dtb";
+    firmware = [
+      pkgs.linux-firmware
+      sfpkgs.linux-firmware-xiaomi-nabu
+    ];
+  };
+
   fileSystems = {
     "/" = {
       device = "/dev/disk/by-partlabel/linux";
@@ -28,8 +27,16 @@
     };
   };
 
+  environment.systemPackages = with pkgs; [
+    tqftpserv
+    rmtfs
+  ];
+
   boot = {
-    kernelPackages = pkgs.linuxPackagesFor flakes.self.packages.aarch64-linux.linux-nabu;
+    # TODO: replace the default one
+    loader.systemd-boot.enable = lib.mkDefault true;
+    growPartition = lib.mkDefault true;
+    kernelPackages = pkgs.linuxPackagesFor sfpkgs.linux-nabu;
     initrd.availableKernelModules = lib.mkForce [
       # NOTE: following comes from alarm: `mkinitcpio -M`
       "arm_smmu"
@@ -100,21 +107,4 @@
       "xhci_plat_hcd"
     ];
   };
-
-  hardware.firmware = [
-    pkgs.linux-firmware
-    flakes.self.packages.aarch64-linux.linux-firmware-xiaomi-nabu
-  ];
-
-  environment.systemPackages = with pkgs; [
-    tqftpserv
-    rmtfs
-  ];
-
-  warnings = [
-    # "This warning is for debugging."
-    # default: "ahci ata_piix autofs efivarfs ehci_hcd ehci_pci ext2 ext4 hid_apple hid_cherry hid_corsair hid_generic hid_lenovo hid_logitech_dj hid_logitech_hidpp hid_microsoft hid_roccat mmc_block nvme ohci_hcd ohci_pci pata_marvell sata_nv sata_sis sata_uli sata_via sd_mod sr_mod tpm-crb tpm-tis uhci_hcd usbhid xhci_hcd xhci_pci"
-    # (toString config.boot.initrd.availableKernelModules)
-    # (toString config.boot.kernelPackages.kernel.buildDTBs)
-  ];
 }

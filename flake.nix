@@ -4,32 +4,35 @@
   outputs =
     { self, nixpkgs }@flakes:
     let
-      pkgs = nixpkgs.legacyPackages.aarch64-linux;
+      system = "aarch64-linux";
+      pkgs = nixpkgs.legacyPackages.${system};
       lib = pkgs.lib;
     in
     {
-      nixosConfigurations.default = nixpkgs.lib.nixosSystem {
-        specialArgs = { inherit flakes; };
-        modules = [
-          ./config.nix
-          ./hardware.nix
-        ];
-      };
-      devShells.aarch64-linux.default = import ./image-builder/shell.nix {
-        inherit pkgs lib;
-        config = self.nixosConfigurations.default.config;
-      };
-      packages.aarch64-linux = {
-        default = self.packages.aarch64-linux.image;
+      devShells.${system}.default = (
+        import ./image-builder/shell.nix {
+          inherit pkgs lib;
+          config = self.nixosConfigurations.default.config;
+        }
+      );
+      packages.${system} = {
+        default = self.packages.${system}.image;
         linux-nabu = pkgs.callPackage ./packages/linux-nabu { };
         alsa-ucm-conf-xiaomi-nabu = pkgs.callPackage ./packages/alsa-ucm-conf-xiaomi-nabu { };
         linux-firmware-xiaomi-nabu = pkgs.callPackage ./packages/linux-firmware-xiaomi-nabu { };
-        image = (import ./archive/make-disk-image.nix) {
-          inherit pkgs lib;
-          config = self.nixosConfigurations.default.config;
-          memSize = 2048;
-          diskSize = 4096;
+      };
+      # NOTE: this NixOS config is designed for build the installer
+      # which should be as small as possible, after that re-build
+      # the system on the target deviece
+      nixosConfigurations.default = nixpkgs.lib.nixosSystem {
+        specialArgs = {
+          inherit flakes;
+          sfpkgs = flakes.self.packages.${system};
         };
+        modules = [
+          ./nixos/configuration.nix
+          ./nixos/hardware-configuration.nix
+        ];
       };
     };
 }
