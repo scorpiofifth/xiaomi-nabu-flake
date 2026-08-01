@@ -2,6 +2,8 @@
 
 # NOTE: it seemd that all operations with
 # sudo can't use app from nixpkgs
+# so you should use `sudo "$(which command)"`
+# cuz it use app from PATH
 set -euo pipefail
 
 round_to_nearest() {
@@ -18,7 +20,7 @@ mkdir -p "$out"
 mkdir -p "$root"
 chmod 755 "$TMPDIR"
 
-echo "running nixos-install..."
+echo "::group::nixos-install"
 nix-store --load-db <"${closureInfo}/registration"
 nixos-install \
   --channel "$channelSources" \
@@ -27,6 +29,7 @@ nixos-install \
   --root "$root" \
   --substituters "" \
   --system "$configBuild"
+echo "::endgroup::"
 
 echo "creating img..."
 truncate -s "${diskSize}M" "$diskImage"
@@ -75,10 +78,11 @@ sudo mkfs.vfat -n ESP "$espDisk"
 echo "mounting espDisk..."
 sudo mount "$espDisk" "$mountPoint"/boot
 
-echo "running nixos-enter for 'switch-to-configuration boot'..."
+echo "::group::nixos-enter"
 NIXOS_INSTALL_BOOTLOADER=1 sudo "$(which nixos-enter)" \
   --root "$mountPoint" \
   -- /nix/var/nix/profiles/system/bin/switch-to-configuration boot
+echo "::endgroup::"
 
 sudo umount -R "$mountPoint"
 sudo rm "/dev/block/254:1"
@@ -86,4 +90,10 @@ sudo rm "/dev/block/254:1"
 sudo tune2fs -T now -U "$rootFSUID" -c 0 -i 0 "$rootDisk"
 sudo tune2fs -f -T 19700101 "$rootDisk"
 
-mv "$diskImage" "$out"/"$baseName".img
+echo "::group::cp the image and files"
+mkdir -p "$out/efi"
+sudo cp -r "$mountPoint"/boot/* "$out/efi"
+sudo dd if="$espDisk" of="$out/esp.img"
+sudo dd if="$rootDisk" of="$out/rootfs.img"
+mv "$diskImage" "$out/nixos.img"
+echo "::endgroup::"

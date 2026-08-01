@@ -13,8 +13,6 @@
   # The initial NixOS configuration file to be copied to
   # /etc/nixos/configuration.nix.
   configFile ? null,
-  # Disk image filename, without any extensions (e.g. `image_1`).
-  baseName ? "nixos",
   # GPT Partition Unique Identifier for root partition.
   rootGPUID ? "F222513B-DED1-49FA-B591-20CE86A2FE7F",
   rootFSUID ? rootGPUID,
@@ -59,7 +57,6 @@ pkgs.mkShell rec {
   configBuild = config.system.build.toplevel;
 
   inherit
-    baseName
     bootSize
     configFile
     diskSize
@@ -69,7 +66,7 @@ pkgs.mkShell rec {
     ;
 
   shellHook = ''
-    export PATH=${binPath}:$PATH
+    export PATH=$binPath:$PATH
     export HOME=$TMPDIR
     export NIX_STATE_DIR=$TMPDIR/state
   '';

@@ -26,6 +26,6 @@ jobs:
         with:
           name: nixos-image
           path: |
-            outputs/nixos.img
+            outputs/out
           retention-days: 90
           compression-level: 5
