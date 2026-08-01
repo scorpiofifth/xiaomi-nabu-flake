@@ -2,7 +2,6 @@
   pkgs,
   lib,
   sfpkgs,
-  config,
   ...
 }:
 {
@@ -47,16 +46,6 @@
         Restart = "always";
       };
     };
-    # rmtfs-dir = {
-    #   description = "Qualcomm remotefs service";
-    #   before = [ "NetworkManager.service" ];
-    #   wantedBy = [ "multi-user.target" ];
-    #   serviceConfig = {
-    #     ExecStart = "${pkgs.rmtfs}/bin/rmtfs -s -o /var/lib/rmtfs";
-    #     RestartSec = 1;
-    #     Restart = "always";
-    #   };
-    # };
     tqftpserv = {
       description = "QRTR TFTP service";
       wantedBy = [ "multi-user.target" ];
@@ -71,8 +60,7 @@
     # TODO: replace the default one
     loader.systemd-boot.enable = lib.mkDefault true;
     growPartition = lib.mkDefault true;
-    kernelPackages = pkgs.linuxPackagesFor sfpkgs.linux-nabu;
-    kernelModules = config.boot.initrd.availableKernelModules;
+    kernelPackages = (pkgs.linuxPackagesFor sfpkgs.linux-nabu);
     initrd = {
       systemd.emergencyAccess = true;
       availableKernelModules = lib.mkForce [
