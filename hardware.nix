@@ -8,7 +8,7 @@
 {
   hardware.deviceTree = {
     enable = true;
-    name = "sm8150-xiaomi-nabu.dtb";
+    name = "qcom/sm8150-xiaomi-nabu.dtb";
   };
   boot = {
     # NOTE: hardware devicetree will be automatically enabled
