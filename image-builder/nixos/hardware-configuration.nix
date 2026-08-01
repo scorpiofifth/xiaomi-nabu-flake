@@ -28,10 +28,44 @@
     };
   };
 
-  environment.systemPackages = with pkgs; [
-    tqftpserv
-    rmtfs
-  ];
+  systemd.services = {
+    qrtr-ns = {
+      description = "QIPCRTR Name Service";
+      wantedBy = [ "multi-user.target" ];
+      serviceConfig = {
+        ExecStart = "${pkgs.qrtr}/bin/qrtr-ns -f 1";
+        Restart = "always";
+      };
+    };
+    rmtfs = {
+      description = "Qualcomm remotefs service";
+      before = [ "NetworkManager.service" ];
+      wantedBy = [ "multi-user.target" ];
+      serviceConfig = {
+        ExecStart = "${pkgs.rmtfs}/bin/rmtfs -r -P -s";
+        RestartSec = 1;
+        Restart = "always";
+      };
+    };
+    # rmtfs-dir = {
+    #   description = "Qualcomm remotefs service";
+    #   before = [ "NetworkManager.service" ];
+    #   wantedBy = [ "multi-user.target" ];
+    #   serviceConfig = {
+    #     ExecStart = "${pkgs.rmtfs}/bin/rmtfs -s -o /var/lib/rmtfs";
+    #     RestartSec = 1;
+    #     Restart = "always";
+    #   };
+    # };
+    tqftpserv = {
+      description = "QRTR TFTP service";
+      wantedBy = [ "multi-user.target" ];
+      serviceConfig = {
+        ExecStart = "${pkgs.tqftpserv}/bin/tqftpserv";
+        Restart = "always";
+      };
+    };
+  };
 
   boot = {
     # TODO: replace the default one

@@ -25,5 +25,20 @@
     fastfetch
     git
     neovim
+    fish
   ];
+  users.users.nix = {
+    password = "nix";
+    ignoreShellProgramCheck = true;
+    isNormalUser = true;
+    extraGroups = [ "wheel" ];
+  };
+  security.sudo = {
+    enable = true;
+    wheelNeedsPassword = false;
+  };
+  nix.settings.substituters = [
+    "https://mirrors.ustc.edu.cn/nix-channels/store"
+  ];
+
 }
