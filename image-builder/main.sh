@@ -20,17 +20,6 @@ mkdir -p "$out"
 mkdir -p "$root"
 chmod 755 "$TMPDIR"
 
-echo "::group::nixos-install"
-nix-store --load-db <"${closureInfo}/registration"
-nixos-install \
-  --channel "$channelSources" \
-  --no-bootloader \
-  --no-root-passwd \
-  --root "$root" \
-  --substituters "" \
-  --system "$configBuild"
-echo "::endgroup::"
-
 echo "::group::create and setup image"
 truncate -s "${diskSize}M" "$diskImage"
 parted --script "$diskImage" -- \
@@ -53,7 +42,18 @@ echo "SECTORS:$SECTORS"
 mkfs.ext4 -b 4096 -F -L "$label" "$diskImage" -E offset=$((START * 512)) $(((SECTORS * 512) / 1024))K
 echo "::endgroup::"
 
-echo "copying staging root to image..."
+echo "::group::nixos-install"
+nix-store --load-db <"${closureInfo}/registration"
+nixos-install \
+  --channel "$channelSources" \
+  --no-bootloader \
+  --no-root-passwd \
+  --root "$root" \
+  --substituters "" \
+  --system "$configBuild"
+echo "::endgroup::"
+
+echo "::group::copy staging root to image"
 cptofs -p -P 2 \
   -t ext4 \
   -i "$diskImage" \
@@ -62,6 +62,7 @@ cptofs -p -P 2 \
     echo >&2 "ERROR: cptofs failed. diskSize might be too small for closure."
     exit 1
   )
+echo "::endgroup::"
 
 echo "patching diskImage..."
 loDevice=$(sudo losetup -fP --show "$diskImage")
@@ -70,15 +71,17 @@ espDisk="${loDevice}p1"
 rootDisk="${loDevice}p2"
 mountPoint="$TMPDIR/mnt"
 
+echo "::group::mount partition"
 sudo mkdir -p "$mountPoint"
 sudo ln -s "$espDisk" "/dev/block/254:1"
-sudo tune2fs -T now -U "$rootFSUID" -c 0 -i 0 "$rootDisk"
+sudo "$(which tune2fs)" -T now -U "$rootFSUID" -c 0 -i 0 "$rootDisk"
 echo "mounting rootDisk..."
 sudo mount "$rootDisk" "$mountPoint"
 sudo mkdir -p "$mountPoint"/boot
 sudo mkfs.vfat -n ESP "$espDisk"
 echo "mounting espDisk..."
 sudo mount "$espDisk" "$mountPoint"/boot
+echo "::endgroup::"
 
 echo "::group::nixos-enter"
 NIXOS_INSTALL_BOOTLOADER=1 sudo "$(which nixos-enter)" \
@@ -94,12 +97,13 @@ echo "::endgroup::"
 sudo umount -R "$mountPoint"
 sudo rm "/dev/block/254:1"
 
-sudo tune2fs -T now -U "$rootFSUID" -c 0 -i 0 "$rootDisk"
-sudo tune2fs -f -T 19700101 "$rootDisk"
+sudo "$(which tune2fs)" -T now -U "$rootFSUID" -c 0 -i 0 "$rootDisk"
+sudo "$(which tune2fs)" -f -T 19700101 "$rootDisk"
 
-echo "::group::cp the image"
-sudo dd if="$espDisk" of="$out/esp.img"
-# TODO: compress it by `resize2fs`
-sudo dd if="$rootDisk" of="$out/rootfs.img"
-mv "$diskImage" "$out/nixos.img"
+echo "::group::copy the images"
+sudo dd if="$espDisk" of="$TMPDIR/esp.img"
+sudo dd if="$rootDisk" of="$TMPDIR/rootfs.img"
+sudo "$(which e2fsck)" -f "$TMPDIR/rootfs.img" -y
+sudo "$(which resize2fs)" "$TMPDIR/rootfs.img" -M
+mv "$diskImage" "$TMPDIR/esp.img" "$TMPDIR/rootfs.img" "$out"
 echo "::endgroup::"

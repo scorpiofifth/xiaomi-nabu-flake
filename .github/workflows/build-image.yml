@@ -21,11 +21,16 @@ jobs:
       - name: Build
         run: |
           nix develop --system aarch64-linux -L -c bash ./image-builder/main.sh
-      - name: Upload installer artifact
+      - name: Upload partiton artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: esp-and-rootfs-image
+          path: |
+            outputs/out/esp.img
+            outputs/out/rootfs.img
+      - name: Upload nixos artifact
         uses: actions/upload-artifact@v7
         with:
           name: nixos-image
           path: |
-            outputs/out
-          retention-days: 90
-          compression-level: 5
+            outputs/out/nixos.img
