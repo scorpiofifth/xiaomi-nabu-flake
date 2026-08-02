@@ -24,7 +24,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     cp a630_sqe.fw a640_gmu.bin "$out/lib/firmware/qcom"
     cp a640_zap.mbn adsp.mbn cdsp.mbn \
       venus.mbn wlanmdsp.mbn slpi_nb.mbn \
-      modom.mbn modemuw.jsn \
+      modem.mbn modemuw.jsn \
       "$out/lib/firmware/qcom/sm8150/xiaomi/nabu"
     cp -r hexagonfs/ "$out/share/qcom/sm8150/xiaomi/nabu"
   '';
