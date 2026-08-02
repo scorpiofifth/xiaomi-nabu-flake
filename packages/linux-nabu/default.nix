@@ -1,3 +1,4 @@
+# see: https://github.com/rodriguezst/arch-kernel-nabu/blob/main/PKGBUILD
 {
   linuxKernel,
   fetchurl,
