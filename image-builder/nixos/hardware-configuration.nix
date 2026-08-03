@@ -2,6 +2,7 @@
   pkgs,
   lib,
   flakes,
+  config,
   ...
 }:
 let
@@ -12,7 +13,7 @@ in
 
   hardware = {
     deviceTree.name = "qcom/sm8150-xiaomi-nabu.dtb";
-    # bluetooth.enable = true;
+    bluetooth.enable = true;
     firmware = lib.mkBefore [ nabupkgs.linux-firmware-xiaomi-nabu ];
   };
 
@@ -65,14 +66,14 @@ in
 
   boot = {
     growPartition = lib.mkDefault true;
-    # kernelParams = [ "fbcon=rotate:1" ];
+    kernelParams = [ "fbcon=rotate:1" ];
+    kernelModules = config.boot.initrd.availableKernelModules;
     kernelPackages = (pkgs.linuxPackagesFor nabupkgs.linux-nabu);
-    loader.systemd-boot.enable = lib.mkDefault true;
-    # loader.external = {
-    #   enable = true;
-    #   # WARN: remember to build uki!!!
-    #   installHook = pkgs.writeShellScript "no-bootloader" "";
-    # };
+    loader.external = {
+      enable = true;
+      # WARN: remember to build uki!!!
+      installHook = pkgs.writeShellScript "no-bootloader" "";
+    };
     initrd = {
       systemd.emergencyAccess = true;
       extraFirmwarePaths = [
