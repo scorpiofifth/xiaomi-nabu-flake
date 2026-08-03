@@ -29,7 +29,7 @@
       runtimeInputs = [ pkgs.networkmanager ];
       text = ''
         nmcli device wifi list
-        nmcli device wifi connect "${vars.wifi.name}" password "${vars.wifi.XUAan4Um}"
+        nmcli device wifi connect "${vars.wifi.name}" password "${vars.wifi.password}"
         sudo nmcli connection modify "${vars.wifi.name}" \
                 ipv4.method manual \
                 ipv4.addresses ${vars.wifi.address} \
