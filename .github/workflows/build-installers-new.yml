@@ -21,7 +21,8 @@ jobs:
         run: chmod o+rx /home/runner
       - name: Build the image
         run: |
-          nix build .#new
+          nix build -L .#new
+          ls result
       - name: Generate UKI and move image
         run: |
           nix build .#nixosConfigurations.default.config.system.build.uki
