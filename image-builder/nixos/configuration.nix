@@ -4,10 +4,18 @@
 
   system.stateVersion = vars.systemVersion;
 
+  console.keyMap = vars.keymap;
+  time.timeZone = vars.timezone;
+
   users.users.${vars.username} = {
     password = vars.username;
     isNormalUser = true;
     extraGroups = [ "wheel" ];
+  };
+
+  security.sudo = {
+    enable = true;
+    wheelNeedsPassword = false;
   };
 
   networking = {
@@ -21,8 +29,6 @@
     settings.PermitRootLogin = "yes";
   };
 
-  console.keyMap = vars.keymap;
-  time.timeZone = vars.timezone;
   environment.systemPackages = [
     (pkgs.writeShellApplication {
       name = "connect-wifi";
