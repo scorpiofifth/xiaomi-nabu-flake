@@ -9,13 +9,12 @@
 let
   alsa-ucm-conf-xiaomi-nabu = stdenvNoCC.mkDerivation (finalAttrs: {
     pname = "alsa-ucm-conf-xiaomi-nabu";
-    version = "infinity";
+    version = "1.0";
 
     src = ./alsa-ucm-conf-xiaomi-nabu.tgz;
 
     installPhase = ''
-      find ucm2/conf.d -type f -exec install -Dm644 "{}" "$out/share/alsa/{}" \;
-      find ucm2/Xiaomi/nabu -type f -exec install -Dm644 "{}" "$out/share/alsa/{}" \;
+      cd usr && find share/alsa/ucm2 -type f -exec install -Dm644 "{}" "$out/share/alsa/{}" \;
     '';
 
     passthru.updateScript = nix-update-script { };
