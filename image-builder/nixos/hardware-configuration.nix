@@ -1,21 +1,28 @@
 {
   pkgs,
   lib,
-  sfpkgs,
+  flakes,
   ...
 }:
+let
+  nabupkgs = flakes.self.packages.aarch64-linux;
+in
 {
   nixpkgs.hostPlatform = "aarch64-linux";
 
   hardware = {
     deviceTree.name = "qcom/sm8150-xiaomi-nabu.dtb";
-    firmware = [
-      pkgs.linux-firmware
-      sfpkgs.linux-firmware-xiaomi-nabu
-    ];
+    bluetooth.enable = true;
+    firmware = lib.mkBefore [ nabupkgs.linux-firmware-xiaomi-nabu ];
   };
 
+  environment.systemPackages = [ nabupkgs.alsa-ucm-conf-xiaomi-nabu ];
+
   fileSystems = {
+    # NOTE: make sure use `by-partlabel` instead of `by-label`
+    # and the label needs to be created before in TWRP
+    # NOTE: after first boot, please run `nixos-generate-config`
+    # to get the uuid version for stability
     "/" = {
       device = "/dev/disk/by-partlabel/linux";
       autoResize = true;
@@ -57,12 +64,26 @@
   };
 
   boot = {
-    # TODO: replace the default one
-    loader.systemd-boot.enable = lib.mkDefault true;
     growPartition = lib.mkDefault true;
-    kernelPackages = (pkgs.linuxPackagesFor sfpkgs.linux-nabu);
+    kernelParams = [ "fbcon=rotate:1" ];
+    kernelPackages = (pkgs.linuxPackagesFor nabupkgs.linux-nabu);
+    loader.external = {
+      enable = true;
+      # WARN: remember to build uki!!!
+      installHook = pkgs.writeShellScript "no-bootloader" "";
+    };
     initrd = {
       systemd.emergencyAccess = true;
+      extraFirmwarePaths = [
+        "novatek/novatek_nt36523_fw.bin"
+        "qca/crbtfw32.tlv"
+        "qca/crnv32.bin"
+        "qcom/a630_sqe.fw"
+        "qcom/a640_gmu.bin"
+        "qcom/sm8150/xiaomi/nabu/a640_zap.mbn"
+        "qcom/sm8150/xiaomi/nabu/adsp.mbn"
+        "qcom/sm8150/xiaomi/nabu/cdsp.mbn"
+      ];
       availableKernelModules = lib.mkForce [
         # NOTE: following comes from alarm: `mkinitcpio -M`
         "arm_smmu"

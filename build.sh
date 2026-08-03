@@ -42,7 +42,6 @@ mountPoint="$TMPDIR/mnt"
 echo "::group::mount partition"
 sudo mkfs.vfat -n ESP "$espDisk"
 sudo mkfs.ext4 -b 4096 -F -L "$label" "$rootDisk"
-sudo ln -s "$espDisk" "/dev/block/254:1" # fix systemd-boot error
 echo "mounting rootDisk..."
 sudo mount --mkdir "$rootDisk" "$mountPoint"
 echo "mounting espDisk..."
@@ -73,7 +72,6 @@ echo "::endgroup::"
 
 echo "::group::umount"
 sudo umount -R "$mountPoint"
-sudo rm "/dev/block/254:1"
 echo "::endgroup::"
 
 echo "::group::copy the images"
