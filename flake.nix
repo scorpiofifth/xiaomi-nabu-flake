@@ -9,12 +9,14 @@
       lib = pkgs.lib;
     in
     {
-      packages.${system} = {
-        default = self.packages.${system}.image;
-        rootfs = (import ./rootfs.nix) {
+      devShells.${system}.default = (
+        import ./image-builder {
           inherit pkgs lib;
           config = self.nixosConfigurations.default.config;
-        };
+        }
+      );
+      packages.${system} = {
+        default = self.packages.${system}.image;
         linux-nabu = pkgs.callPackage ./packages/linux-nabu { };
         alsa-ucm-conf-xiaomi-nabu = pkgs.callPackage ./packages/alsa-ucm-conf-xiaomi-nabu { };
         linux-firmware-xiaomi-nabu = pkgs.callPackage ./packages/linux-firmware-xiaomi-nabu { };
@@ -27,7 +29,7 @@
           inherit flakes;
           vars = import ./vars.nix;
         };
-        modules = [ ./nixos/configuration.nix ];
+        modules = [ ./image-builder/nixos/configuration.nix ];
       };
     };
 }
