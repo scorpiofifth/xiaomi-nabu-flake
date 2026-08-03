@@ -13,7 +13,7 @@ in
   hardware = {
     deviceTree.name = "qcom/sm8150-xiaomi-nabu.dtb";
     # bluetooth.enable = true;
-    # firmware = lib.mkBefore [ nabupkgs.linux-firmware-xiaomi-nabu ];
+    firmware = lib.mkBefore [ nabupkgs.linux-firmware-xiaomi-nabu ];
   };
 
   environment.systemPackages = [ nabupkgs.alsa-ucm-conf-xiaomi-nabu ];
@@ -75,16 +75,16 @@ in
     # };
     initrd = {
       systemd.emergencyAccess = true;
-      # extraFirmwarePaths = [
-      #   "novatek/novatek_nt36523_fw.bin"
-      #   "qca/crbtfw32.tlv"
-      #   "qca/crnv32.bin"
-      #   "qcom/a630_sqe.fw"
-      #   "qcom/a640_gmu.bin"
-      #   "qcom/sm8150/xiaomi/nabu/a640_zap.mbn"
-      #   "qcom/sm8150/xiaomi/nabu/adsp.mbn"
-      #   "qcom/sm8150/xiaomi/nabu/cdsp.mbn"
-      # ];
+      extraFirmwarePaths = [
+        "novatek/novatek_nt36523_fw.bin"
+        "qca/crbtfw32.tlv"
+        "qca/crnv32.bin"
+        "qcom/a630_sqe.fw"
+        "qcom/a640_gmu.bin"
+        "qcom/sm8150/xiaomi/nabu/a640_zap.mbn"
+        "qcom/sm8150/xiaomi/nabu/adsp.mbn"
+        "qcom/sm8150/xiaomi/nabu/cdsp.mbn"
+      ];
       availableKernelModules = lib.mkForce [
         # NOTE: following comes from alarm: `mkinitcpio -M`
         "arm_smmu"
