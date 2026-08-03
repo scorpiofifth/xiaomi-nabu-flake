@@ -9,15 +9,9 @@
       lib = pkgs.lib;
     in
     {
-      devShells.${system}.default = (
-        import ./image-builder {
-          inherit pkgs lib;
-          config = self.nixosConfigurations.default.config;
-        }
-      );
       packages.${system} = {
         default = self.packages.${system}.image;
-        new = (import ./make.nix) {
+        rootfs = (import ./rootfs.nix) {
           inherit pkgs lib;
           config = self.nixosConfigurations.default.config;
         };
@@ -33,7 +27,7 @@
           inherit flakes;
           vars = import ./vars.nix;
         };
-        modules = [ ./image-builder/nixos/configuration.nix ];
+        modules = [ ./nixos/configuration.nix ];
       };
     };
 }

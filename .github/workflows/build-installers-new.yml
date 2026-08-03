@@ -14,21 +14,21 @@ jobs:
       - name: Setup Cachix cache
         uses: cachix/cachix-action@v17
         with:
+          skipPush: true
           name: nixpkgs-for-nabu
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
-          skipPush: true
-      - name: Fix permissions
-        run: chmod o+rx /home/runner
+      - name: Setup environment
+        run: |
+          chmod o+rx /home/runner
+          mkdir ./installer/images ./installer/efi/nixos
       - name: Build the image
         run: |
-          nix build -L .#new
-          ls result
-          mkdir ./installer/efi/nixos ./installer/images
-          cp result/rootfs.img ./installer/images
+          nix build -L .#rootfs
+          cp ./result/rootfs.img ./installer/images
+      - name: Build the UKI
+        run: |
           nix build .#nixosConfigurations.default.config.system.build.uki
           cp ./result/nixos.efi ./installer/efi/nixos
-          # sudo chown -R $USER:$USER ./installer/efi
-          # mv outputs/out/rootfs.img ./installer/images
       - name: Upload installer
         uses: actions/upload-artifact@v7
         with:
