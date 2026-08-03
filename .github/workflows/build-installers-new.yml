@@ -1,4 +1,4 @@
-name: Build Installer(nixos)
+name: Build Installer(new)
 on: workflow_dispatch
 jobs:
   build:
@@ -21,16 +21,15 @@ jobs:
         run: chmod o+rx /home/runner
       - name: Build the image
         run: |
-          nix develop \
-            --system aarch64-linux -L \
-            -c bash ./build.sh
+          nix build .#new
       - name: Generate UKI and move image
         run: |
           nix build .#nixosConfigurations.default.config.system.build.uki
           mkdir ./installer/efi/nixos ./installer/images
           cp ./result/nixos.efi ./installer/efi/nixos
           sudo chown -R $USER:$USER ./installer/efi
-          mv outputs/out/rootfs.img ./installer/images
+          # mv outputs/out/rootfs.img ./installer/images
+          cp result/nixos.img ./installer/images/rootfs.img
       - name: Upload installer
         uses: actions/upload-artifact@v7
         with:
