@@ -17,10 +17,6 @@
       );
       packages.${system} = {
         default = self.packages.${system}.image;
-        new = (import ./make.nix) {
-          inherit pkgs lib;
-          config = self.nixosConfigurations.default.config;
-        };
         linux-nabu = pkgs.callPackage ./packages/linux-nabu { };
         alsa-ucm-conf-xiaomi-nabu = pkgs.callPackage ./packages/alsa-ucm-conf-xiaomi-nabu { };
         linux-firmware-xiaomi-nabu = pkgs.callPackage ./packages/linux-firmware-xiaomi-nabu { };
