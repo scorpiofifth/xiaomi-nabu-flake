@@ -43,7 +43,7 @@ pkgs.mkShell rec {
 
   closureInfo = pkgs.closureInfo {
     rootPaths = [
-      config.system.build.toplevel
+      configBuild
       channelSources
     ];
   };
