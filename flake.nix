@@ -25,7 +25,10 @@
       # which should be as small as possible, after that re-build
       # the system on the target deviece
       nixosConfigurations.default = nixpkgs.lib.nixosSystem {
-        specialArgs = { inherit flakes; };
+        specialArgs = {
+          inherit flakes;
+          vars = import ./vars.nix;
+        };
         modules = [ ./image-builder/nixos/configuration.nix ];
       };
     };
