@@ -16,7 +16,7 @@ in
     # firmware = lib.mkBefore [ nabupkgs.linux-firmware-xiaomi-nabu ];
   };
 
-  # environment.systemPackages = [ nabupkgs.alsa-ucm-conf-xiaomi-nabu ];
+  environment.systemPackages = [ nabupkgs.alsa-ucm-conf-xiaomi-nabu ];
 
   fileSystems = {
     # NOTE: make sure use `by-partlabel` instead of `by-label`
@@ -65,13 +65,14 @@ in
 
   boot = {
     growPartition = lib.mkDefault true;
-    kernelParams = [ "fbcon=rotate:1" ];
+    # kernelParams = [ "fbcon=rotate:1" ];
     kernelPackages = (pkgs.linuxPackagesFor nabupkgs.linux-nabu);
-    loader.external = {
-      enable = true;
-      # WARN: remember to build uki!!!
-      installHook = pkgs.writeShellScript "no-bootloader" "";
-    };
+    loader.systemd-boot.enable = lib.mkDefault true;
+    # loader.external = {
+    #   enable = true;
+    #   # WARN: remember to build uki!!!
+    #   installHook = pkgs.writeShellScript "no-bootloader" "";
+    # };
     initrd = {
       systemd.emergencyAccess = true;
       # extraFirmwarePaths = [
