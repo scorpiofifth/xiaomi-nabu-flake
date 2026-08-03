@@ -59,11 +59,11 @@ sudo env "PATH=$PATH" nixos-install \
   --system "$configBuild"
 echo "::endgroup::"
 
-# echo "::group::nixos-enter"
-# NIXOS_INSTALL_BOOTLOADER=1 sudo env "PATH=$PATH" nixos-enter \
-#   --root "$mountPoint" \
-#   -- /nix/var/nix/profiles/system/bin/switch-to-configuration boot
-# echo "::endgroup::"
+echo "::group::nixos-enter"
+NIXOS_INSTALL_BOOTLOADER=1 sudo env "PATH=$PATH" nixos-enter \
+  --root "$mountPoint" \
+  -- /nix/var/nix/profiles/system/bin/switch-to-configuration boot
+echo "::endgroup::"
 
 echo "::group::umount"
 sudo umount -R "$mountPoint"
