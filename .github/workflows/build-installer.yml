@@ -1,4 +1,4 @@
-name: Build Installer(new)
+name: Build Installer(nixos)
 on: workflow_dispatch
 jobs:
   build:
