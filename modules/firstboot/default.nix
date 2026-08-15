@@ -1,0 +1,39 @@
+{
+  config,
+  lib,
+  ...
+}:
+let
+  cfg = config.nabu;
+in
+{
+  options.nabu.firstboot = {
+    enable = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+    };
+    rootLabel = lib.mkOption {
+      type = lib.types.string;
+      default = "linux";
+    };
+    espLabel = lib.mkOption {
+      type = lib.types.string;
+      default = "esp";
+    };
+  };
+
+  config = lib.mkIf (cfg.enable && cfg.firstboot.enable) {
+    boot.growPartition = true;
+    fileSystems = {
+      "/" = {
+        device = "/dev/disk/by-partlabel/${cfg.firstboot.rootLabel}";
+        fsType = "ext4";
+        autoResize = true;
+      };
+      "/boot" = {
+        device = "/dev/disk/by-partlabel/${cfg.firstboot.espLabel}";
+        fsType = "vfat";
+      };
+    };
+  };
+}
