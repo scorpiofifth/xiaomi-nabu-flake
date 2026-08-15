@@ -23,7 +23,7 @@ in
   };
 
   config = lib.mkIf (cfg.enable && cfg.cachix.enable) {
-    nix = {
+    nix.settings = {
       substituters = [ cfg.cachix.url ];
       trusted-public-keys = [ cfg.cachix.key ];
     };
