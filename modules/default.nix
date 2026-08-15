@@ -1,6 +1,9 @@
 { lib, ... }:
 {
   imports = [
+    ./firmware
+    ./firstboot
+    ./kernel
     ./sound
   ];
 
