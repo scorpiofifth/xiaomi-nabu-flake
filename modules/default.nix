@@ -1,6 +1,7 @@
 { lib, ... }:
 {
   imports = [
+    ./cachix
     ./firmware
     ./firstboot
     ./kernel
