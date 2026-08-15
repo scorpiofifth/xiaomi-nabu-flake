@@ -10,7 +10,7 @@ in
   options.nabu.firstboot = {
     enable = lib.mkOption {
       type = lib.types.bool;
-      default = true;
+      default = false;
     };
     rootLabel = lib.mkOption {
       type = lib.types.string;
