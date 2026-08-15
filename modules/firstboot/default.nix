@@ -13,11 +13,11 @@ in
       default = false;
     };
     rootLabel = lib.mkOption {
-      type = lib.types.string;
+      type = lib.types.str;
       default = "linux";
     };
     espLabel = lib.mkOption {
-      type = lib.types.string;
+      type = lib.types.str;
       default = "esp";
     };
   };
