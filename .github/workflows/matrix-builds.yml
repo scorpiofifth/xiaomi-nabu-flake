@@ -10,6 +10,7 @@ jobs:
           - alsa-ucm-conf-xiaomi-nabu
           - linux-firmware-xiaomi-nabu
           - linux-nabu
+          - upower
     steps:
       - name: Checkout
         uses: actions/checkout@v7

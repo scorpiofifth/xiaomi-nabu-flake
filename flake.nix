@@ -5,10 +5,15 @@
     { self, nixpkgs }:
     let
       system = "aarch64-linux";
-      pkgs = nixpkgs.legacyPackages.${system};
+      pkgs = import nixpkgs {
+        inherit system;
+        overlays = self.overlays.default;
+      };
     in
     {
+      overlays.default = import ./overlays;
       packages.${system} = {
+        upower = pkgs.upower;
         linux-nabu = pkgs.callPackage ./packages/linux-nabu { };
         alsa-ucm-conf-xiaomi-nabu = pkgs.callPackage ./packages/alsa-ucm-conf-xiaomi-nabu { };
         linux-firmware-xiaomi-nabu = pkgs.callPackage ./packages/linux-firmware-xiaomi-nabu { };
