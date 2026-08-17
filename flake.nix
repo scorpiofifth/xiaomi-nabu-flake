@@ -22,7 +22,7 @@
         imports = [ ./modules ];
         _module.args = {
           nabuPkgs = self.packages.${system};
-          nabuOverlays = self.overlays;
+          nabuOverlays = self.overlays.default;
         };
       };
     };
