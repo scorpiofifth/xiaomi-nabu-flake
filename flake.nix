@@ -20,7 +20,10 @@
       };
       nixosModules.default = {
         imports = [ ./modules ];
-        _module.args.nabupkgs = self.packages.${system};
+        _module.args = {
+          nabuPkgs = self.packages.${system};
+          nabuOverlays = self.overlays;
+        };
       };
     };
 }

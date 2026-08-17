@@ -2,7 +2,8 @@
   config,
   lib,
   pkgs,
-  nabupkgs,
+
+  nabuPkgs,
   ...
 }:
 let
@@ -16,7 +17,7 @@ in
     };
     package = lib.mkOption {
       type = lib.types.package;
-      default = nabupkgs.linux-nabu;
+      default = nabuPkgs.linux-nabu;
     };
   };
 

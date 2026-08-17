@@ -1,8 +1,9 @@
 {
   config,
   lib,
-  nabupkgs,
   pkgs,
+
+  nabuPkgs,
   ...
 }:
 let
@@ -16,7 +17,7 @@ in
     };
     package = lib.mkOption {
       type = lib.types.package;
-      default = nabupkgs.linux-firmware-xiaomi-nabu;
+      default = nabuPkgs.linux-firmware-xiaomi-nabu;
     };
   };
 

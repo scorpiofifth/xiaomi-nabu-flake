@@ -1,7 +1,8 @@
 {
   config,
   lib,
-  nabupkgs,
+
+  nabuPkgs,
   ...
 }:
 let
@@ -15,7 +16,7 @@ in
     };
     package = lib.mkOption {
       type = lib.types.package;
-      default = nabupkgs.alsa-ucm-conf-xiaomi-nabu;
+      default = nabuPkgs.alsa-ucm-conf-xiaomi-nabu;
     };
   };
 
