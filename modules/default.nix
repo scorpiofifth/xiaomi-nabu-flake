@@ -5,6 +5,7 @@
     ./firmware
     ./firstboot
     ./kernel
+    ./overlays
     ./sound
   ];
 
