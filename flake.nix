@@ -15,6 +15,7 @@
       packages.${system} = {
         upower = pkgs.upower;
         linux-nabu = pkgs.callPackage ./packages/linux-nabu { };
+        linux-nabu-kumar-jy = pkgs.callPackage ./packages/linux-nabu-kumar-jy { };
         alsa-ucm-conf-xiaomi-nabu = pkgs.callPackage ./packages/alsa-ucm-conf-xiaomi-nabu { };
         linux-firmware-xiaomi-nabu = pkgs.callPackage ./packages/linux-firmware-xiaomi-nabu { };
       };

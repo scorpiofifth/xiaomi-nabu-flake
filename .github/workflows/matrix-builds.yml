@@ -10,6 +10,7 @@ jobs:
           - alsa-ucm-conf-xiaomi-nabu
           - linux-firmware-xiaomi-nabu
           - linux-nabu
+          - linux-nabu-kumar-jy
           - upower
     steps:
       - name: Checkout
